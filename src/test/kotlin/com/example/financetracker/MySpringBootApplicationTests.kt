@@ -8,6 +8,7 @@ class MySpringBootApplicationTests {
 
     @Test
     fun contextLoads() {
+        println("VVV")
     }
 
 }
