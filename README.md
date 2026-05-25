@@ -1,0 +1,85 @@
+# 💰 Finance Tracker
+
+Personal finance REST API built with Kotlin, Spring Boot, and PostgreSQL.  
+A pet project for learning backend development.
+
+## Tech Stack
+
+- **Kotlin** + **Spring Boot 4**
+- **PostgreSQL** — database
+- **Spring Data JPA** — data access
+- **Flyway** — database migrations
+- **MockK** — testing
+- **Docker** — local infrastructure
+- **Kubernetes** — deployment (coming soon)
+
+## Getting Started
+
+### Prerequisites
+- JDK 21
+- Docker Desktop
+
+### Run locally
+
+1. Clone the repository
+```bash
+   git clone https://github.com/vivolkova/finance-tracker.git
+   cd finance-tracker
+```
+
+2. Start the database
+```bash
+   docker compose up -d
+```
+
+3. Run the application
+```bash
+   ./gradlew bootRun
+```
+
+API will be available at `http://localhost:8080`
+
+## Project Structure
+
+```
+src/
+├── main/kotlin/com/example/financetracker/
+│   ├── category/
+│   │   ├── Category.kt           # Entity + CategoryType enum
+│   │   └── CategoryRepository.kt # JPA repository
+│   ├── transaction/
+│   │   └── Transaction.kt        # Entity + TransactionType enum
+│   └── MySpringBootApplication.kt
+├── main/resources/
+│   ├── db/migration/
+│   │   ├── V1__create_categories.sql
+│   │   └── V2__create_transactions.sql
+│   └── application.properties
+└── test/
+```
+
+
+## API Endpoints
+
+### Categories
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/categories` | Get all categories |
+| POST | `/api/categories` | Create category |
+| DELETE | `/api/categories/{id}` | Delete category |
+
+### Transactions
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/transactions` | Get all transactions |
+| POST | `/api/transactions` | Create transaction |
+| GET | `/api/transactions/summary` | Monthly summary |
+
+## Running Tests
+
+```bash
+./gradlew test
+```
+
+## License
+MIT
