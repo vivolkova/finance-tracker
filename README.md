@@ -40,3 +40,46 @@ A pet project for learning backend development.
 API will be available at `http://localhost:8080`
 
 ## Project Structure
+
+```
+src/
+├── main/kotlin/com/example/financetracker/
+│   ├── category/
+│   │   ├── Category.kt           # Entity + CategoryType enum
+│   │   └── CategoryRepository.kt # JPA repository
+│   ├── transaction/
+│   │   └── Transaction.kt        # Entity + TransactionType enum
+│   └── MySpringBootApplication.kt
+├── main/resources/
+│   ├── db/migration/
+│   │   ├── V1__create_categories.sql
+│   │   └── V2__create_transactions.sql
+│   └── application.properties
+└── test/
+```
+
+
+## API Endpoints
+
+### Categories
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/categories` | Get all categories |
+| POST | `/api/categories` | Create category |
+| DELETE | `/api/categories/{id}` | Delete category |
+
+### Transactions
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/transactions` | Get all transactions |
+| POST | `/api/transactions` | Create transaction |
+| GET | `/api/transactions/summary` | Monthly summary |
+
+## Running Tests
+
+```bash
+./gradlew test
+```
+
+## License
+MIT
