@@ -1,5 +1,6 @@
 package com.example.financetracker.transaction
 
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import java.math.BigDecimal
@@ -7,21 +8,20 @@ import java.time.LocalDate
 
 @RestController
 @RequestMapping("/api/transactions")
+@Tag(name = "Transactions", description = "Transactions")
 class TransactionController(
     private val transactionService: TransactionService
 ) {
 
     @GetMapping
-    fun getAll(): List<Transaction> =
-        transactionService.getAll()
+    fun getAll(): List<TransactionDto> = transactionService.getAll()
 
     @GetMapping("/{id}")
-    fun getById(@PathVariable id: Long): Transaction =
-        transactionService.getById(id)
+    fun getById(@PathVariable id: Long): TransactionDto = transactionService.getById(id)
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    fun create(@RequestBody request: CreateTransactionRequest): Transaction =
+    fun create(@RequestBody request: CreateTransactionRequest): TransactionDto =
         transactionService.create(
             CreateTransactionCommand(
                 amount = request.amount,

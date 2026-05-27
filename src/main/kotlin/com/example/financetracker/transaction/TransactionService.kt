@@ -1,7 +1,9 @@
 package com.example.financetracker.transaction
 
 import com.example.financetracker.category.CategoryRepository
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -18,15 +20,20 @@ class TransactionService(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository
 ) {
+    private val logger = LoggerFactory.getLogger(TransactionService::class.java)
 
-    fun getAll(): List<Transaction> =
-        transactionRepository.findAll()
+    @Transactional(readOnly = true)
+    fun getAll(): List<TransactionDto> =
+        transactionRepository.findAll().map { it.toDto() }
 
-    fun getById(id: Long): Transaction =
+    @Transactional(readOnly = true)
+    fun getById(id: Long): TransactionDto =
         transactionRepository.findById(id)
             .orElseThrow { NoSuchElementException("Transaction not found with id: $id") }
+            .toDto()
 
-    fun create(command: CreateTransactionCommand): Transaction {
+    @Transactional
+    fun create(command: CreateTransactionCommand): TransactionDto {
         val category = categoryRepository.findById(command.categoryId)
             .orElseThrow { NoSuchElementException("Category not found with id: ${command.categoryId}") }
 
@@ -38,12 +45,15 @@ class TransactionService(
                 type = command.type,
                 category = category
             )
-        )
+        ).toDto()
     }
 
+    @Transactional
     fun delete(id: Long) {
+        logger.info("Deleting transaction with id: $id")
         if (!transactionRepository.existsById(id))
             throw NoSuchElementException("Transaction not found with id: $id")
         transactionRepository.deleteById(id)
+        logger.info("Transaction deleted successfully: $id")
     }
 }

@@ -8,17 +8,16 @@ class CategoryService(
     private val categoryRepository: CategoryRepository
 ) {
 
-    fun getAll(): List<Category> =
-        categoryRepository.findAll()
+    fun getAll(): List<CategoryDto> =
+        categoryRepository.findAll().map { it.toDto() }
 
-    fun getById(id: Long): Category =
+    fun getById(id: Long): CategoryDto =
         categoryRepository.findById(id)
             .orElseThrow { NoSuchElementException("Category not found with id: $id") }
+            .toDto()
 
-    fun create(name: String, type: CategoryType): Category {
-        val category = Category(name = name, type = type)
-        return categoryRepository.save(category)
-    }
+    fun create(name: String, type: CategoryType): CategoryDto =
+        categoryRepository.save(Category(name = name, type = type)).toDto()
 
     fun delete(id: Long) {
         if (!categoryRepository.existsById(id)) {
