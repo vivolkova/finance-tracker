@@ -7,9 +7,10 @@ A pet project for learning backend development.
 
 - **Kotlin** + **Spring Boot 4**
 - **PostgreSQL** — database
-- **Spring Data JPA** — data access
+- **Spring Data JPA** + **Hibernate** — data access
 - **Flyway** — database migrations
-- **MockK** — testing
+- **Springdoc OpenAPI / Swagger UI** — API documentation
+- **MockK** + **JUnit 6** — testing
 - **Docker** — local infrastructure
 - **Kubernetes** — deployment (coming soon)
 
@@ -27,44 +28,23 @@ A pet project for learning backend development.
    cd finance-tracker
 ```
 
-2. Start the database
-```bash
-   docker compose up -d
-```
-
-3. Run the application
+2. Run the application (Docker starts automatically)
 ```bash
    ./gradlew bootRun
 ```
 
-API will be available at `http://localhost:8080`
-
-## Project Structure
-
-```
-src/
-├── main/kotlin/com/example/financetracker/
-│   ├── category/
-│   │   ├── Category.kt           # Entity + CategoryType enum
-│   │   └── CategoryRepository.kt # JPA repository
-│   ├── transaction/
-│   │   └── Transaction.kt        # Entity + TransactionType enum
-│   └── MySpringBootApplication.kt
-├── main/resources/
-│   ├── db/migration/
-│   │   ├── V1__create_categories.sql
-│   │   └── V2__create_transactions.sql
-│   └── application.properties
-└── test/
-```
+API will be available at `http://localhost:8080`  
+Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 
 
+# Project Structure
 ## API Endpoints
 
 ### Categories
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/categories` | Get all categories |
+| GET | `/api/categories/{id}` | Get category by id |
 | POST | `/api/categories` | Create category |
 | DELETE | `/api/categories/{id}` | Delete category |
 
@@ -72,8 +52,17 @@ src/
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/transactions` | Get all transactions |
+| GET | `/api/transactions/{id}` | Get transaction by id |
 | POST | `/api/transactions` | Create transaction |
-| GET | `/api/transactions/summary` | Monthly summary |
+| DELETE | `/api/transactions/{id}` | Delete transaction |
+
+## API Documentation
+
+Full interactive API documentation available via Swagger UI:
+http://localhost:8080/swagger-ui/index.html
+
+OpenAPI JSON (importable to Postman):
+http://localhost:8080/v3/api-docs
 
 ## Running Tests
 
