@@ -40,6 +40,13 @@ class TransactionController(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun delete(@PathVariable id: Long) =
         transactionService.delete(id)
+
+    @GetMapping("/summary")
+    fun getMonthlySummary(
+        @RequestParam year: Int,
+        @RequestParam month: Int
+    ): MonthlySummary =
+        transactionService.getMonthlySummary(year, month)
 }
 
 data class CreateTransactionRequest(

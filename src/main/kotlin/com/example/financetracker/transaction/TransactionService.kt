@@ -56,4 +56,37 @@ class TransactionService(
         transactionRepository.deleteById(id)
         logger.info("Transaction deleted successfully: $id")
     }
+
+    @Transactional(readOnly = true)
+    fun getMonthlySummary(year: Int, month: Int): MonthlySummary {
+        val date = LocalDate.of(year, month, 1)
+        val transactions = transactionRepository.findAllByMonth(date)
+
+        val totalIncome = transactions
+            .filter { it.type == TransactionType.INCOME }
+            .fold(BigDecimal.ZERO) { acc, t -> acc + t.amount }
+
+        val totalExpense = transactions
+            .filter { it.type == TransactionType.EXPENSE }
+            .fold(BigDecimal.ZERO) { acc, t -> acc + t.amount }
+
+        val byCategory = transactions
+            .groupBy { it.category }
+            .map { (category, txs) ->
+                CategorySummary(
+                    categoryName = category.name,
+                    type = category.type,
+                    total = txs.fold(BigDecimal.ZERO) { acc, t -> acc + t.amount }
+                )
+            }
+            .sortedByDescending { it.total }
+
+        return MonthlySummary(
+            month = "$year-${month.toString().padStart(2, '0')}",
+            totalIncome = totalIncome,
+            totalExpense = totalExpense,
+            balance = totalIncome - totalExpense,
+            byCategory = byCategory
+        )
+    }
 }
