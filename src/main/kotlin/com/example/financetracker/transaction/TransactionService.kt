@@ -1,7 +1,9 @@
 package com.example.financetracker.transaction
 
 import com.example.financetracker.category.CategoryRepository
+import com.example.financetracker.user.User
 import org.slf4j.LoggerFactory
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -37,13 +39,16 @@ class TransactionService(
         val category = categoryRepository.findById(command.categoryId)
             .orElseThrow { NoSuchElementException("Category not found with id: ${command.categoryId}") }
 
+        val currentUser = SecurityContextHolder.getContext().authentication?.principal as? User
+
         return transactionRepository.save(
             Transaction(
                 amount = command.amount,
                 description = command.description,
                 date = command.date,
                 type = command.type,
-                category = category
+                category = category,
+                user = currentUser
             )
         ).toDto()
     }

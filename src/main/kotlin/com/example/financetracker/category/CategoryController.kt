@@ -18,7 +18,7 @@ class CategoryController(
 ) {
 
     @GetMapping
-    @Operation(summary = "Get all transactions")
+    @Operation(summary = "Get all categories")
     fun getAll(): List<CategoryDto> = categoryService.getAll()
 
     @GetMapping("/{id}")
