@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "refresh_tokens")
-data class RefreshToken(
+class RefreshToken(
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
