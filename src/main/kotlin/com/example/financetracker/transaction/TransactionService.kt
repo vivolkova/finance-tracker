@@ -94,4 +94,29 @@ class TransactionService(
             byCategory = byCategory
         )
     }
+    @Transactional
+    fun update(id: Long, request: UpdateTransactionRequest): TransactionDto {
+        val transaction = transactionRepository.findById(id)
+            .orElseThrow { NoSuchElementException("Transaction not found with id: $id") }
+
+        val category = if (request.categoryId != null) {
+            categoryRepository.findById(request.categoryId)
+                .orElseThrow { NoSuchElementException("Category not found with id: ${request.categoryId}") }
+        } else {
+            transaction.category
+        }
+
+        val updated = Transaction(
+            id = transaction.id,
+            amount = request.amount ?: transaction.amount,
+            description = request.description ?: transaction.description,
+            date = request.date ?: transaction.date,
+            type = request.type ?: transaction.type,
+            category = category,
+            user = transaction.user,
+            createdAt = transaction.createdAt
+        )
+
+        return transactionRepository.save(updated).toDto()
+    }
 }

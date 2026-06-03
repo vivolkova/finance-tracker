@@ -16,6 +16,14 @@ data class TransactionDto(
     val createdAt: LocalDateTime
 )
 
+data class UpdateTransactionRequest(
+    val amount: BigDecimal? = null,
+    val description: String? = null,
+    val date: LocalDate? = null,
+    val type: TransactionType? = null,
+    val categoryId: Long? = null
+)
+
 fun Transaction.toDto() = TransactionDto(
     id = id,
     amount = amount,

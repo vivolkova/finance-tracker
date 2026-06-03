@@ -47,6 +47,22 @@ class TransactionController(
         @RequestParam month: Int
     ): MonthlySummary =
         transactionService.getMonthlySummary(year, month)
+
+    @PatchMapping("/{id}")
+    fun update(
+        @PathVariable id: Long,
+        @RequestBody request: UpdateTransactionRequest
+    ): TransactionDto =
+        transactionService.update(
+            id,
+            UpdateTransactionRequest(
+                amount = request.amount,
+                description = request.description,
+                date = request.date,
+                type = request.type,
+                categoryId = request.categoryId
+            )
+        )
 }
 
 data class CreateTransactionRequest(
