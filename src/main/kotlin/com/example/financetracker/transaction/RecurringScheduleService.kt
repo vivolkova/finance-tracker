@@ -30,7 +30,7 @@ class RecurringScheduleService(
             throw NoSuchElementException("Transaction not found with id: $transactionId")
         }
         require(!scheduleRepository.findByTransactionId(transactionId).isPresent) {
-            throw IllegalArgumentException("Schedule already exists for transaction $transactionId")
+            IllegalArgumentException("Schedule already exists for transaction $transactionId")
         }
 
         val schedule = RecurringSchedule(
