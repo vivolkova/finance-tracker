@@ -45,7 +45,7 @@ class JwtAuthFilter(
             user, null, emptyList()
         )
         authentication.details = WebAuthenticationDetailsSource().buildDetails(request)
-        logger.info("Authenticated user: $email, IP: ${(authentication.details as WebAuthenticationDetails).remoteAddress}")
+        logger.debug("Authenticated user: $email, IP: ${(authentication.details as WebAuthenticationDetails).remoteAddress}")
         SecurityContextHolder.getContext().authentication = authentication
 
         filterChain.doFilter(request, response)

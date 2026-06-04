@@ -3,6 +3,7 @@ package com.example.financetracker.user
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Duration
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -21,7 +22,7 @@ class RefreshTokenService(
         val refreshToken = RefreshToken(
             token = UUID.randomUUID().toString(),
             userId = userId,
-            expiresAt = LocalDateTime.now().plusNanos(refreshExpiration * 1_000_000)
+            expiresAt = LocalDateTime.now().plus(Duration.ofMillis(refreshExpiration))
         )
         return refreshTokenRepository.save(refreshToken)
     }
@@ -31,8 +32,8 @@ class RefreshTokenService(
         val refreshToken = refreshTokenRepository.findByToken(token)
             .orElseThrow { IllegalArgumentException("Invalid refresh token") }
 
-        if (refreshToken.expiresAt.isBefore(LocalDateTime.now())) {
-            throw IllegalArgumentException("Refresh token expired")
+        require (!refreshToken.expiresAt.isBefore(LocalDateTime.now())) {
+            "Refresh token expired"
         }
         return refreshToken
     }
