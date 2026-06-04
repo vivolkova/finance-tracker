@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
-import org.jetbrains.annotations.NotNull
+import jakarta.validation.constraints.NotNull
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import java.math.BigDecimal
@@ -51,34 +51,28 @@ class TransactionController(
     @PatchMapping("/{id}")
     fun update(
         @PathVariable id: Long,
-        @RequestBody request: UpdateTransactionRequest
+        @Valid @RequestBody request: UpdateTransactionRequest
     ): TransactionDto =
         transactionService.update(
             id,
-            UpdateTransactionRequest(
-                amount = request.amount,
-                description = request.description,
-                date = request.date,
-                type = request.type,
-                categoryId = request.categoryId
-            )
+            request
         )
 }
 
 data class CreateTransactionRequest(
-    @field:NotNull(value = "Amount cannot be null")
+    @field:NotNull(message = "Amount cannot be null")
     @field:Positive(message = "Amount must be positive")
     val amount: BigDecimal,
 
     @field:Size(max = 255, message = "Description must be less than 255 characters")
     val description: String? = null,
 
-    @field:NotNull(value = "Date cannot be null")
+    @field:NotNull(message = "Date cannot be null")
     val date: LocalDate,
 
-    @field:NotNull(value = "Type cannot be null")
+    @field:NotNull(message = "Type cannot be null")
     val type: TransactionType,
 
-    @field:NotNull(value = "Category id cannot be null")
+    @field:NotNull(message = "Category id cannot be null")
     val categoryId: Long
 )

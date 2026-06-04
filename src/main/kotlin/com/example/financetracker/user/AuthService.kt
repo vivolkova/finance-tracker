@@ -32,7 +32,7 @@ class AuthService(
 
     fun register(request: RegisterRequest): AuthResponse {
         require(!userRepository.existsByEmail(request.email)) {
-            IllegalArgumentException("User with email ${request.email} already exists") }
+            "User with email ${request.email} already exists" }
         val user = userRepository.save(
             User(
                 email = request.email,
@@ -48,7 +48,7 @@ class AuthService(
             .orElseThrow { throw IllegalArgumentException("Invalid email or password") }
 
         require(passwordEncoder.matches(request.password, user.password)) {
-            IllegalArgumentException("Invalid email or password")
+            "Invalid email or password"
         }
         return buildAuthResponse(user)
     }
