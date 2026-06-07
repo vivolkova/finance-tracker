@@ -4,12 +4,14 @@ import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
 import java.time.LocalDate
 
 @Component
 class RecurringTransactionScheduler(
     private val scheduleRepository: RecurringScheduleRepository,
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val clock: Clock
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -17,7 +19,13 @@ class RecurringTransactionScheduler(
     @Transactional
     fun processRecurringTransactions() {
         logger.info("Processing recurring transactions...")
-        val today = LocalDate.now()
+        val today = LocalDate.now(clock)
+
+        val deactivated = scheduleRepository.deactivateExpired(today)
+        if (deactivated > 0) {
+            logger.info("Deactivated $deactivated expired schedule(s)")
+        }
+
         val schedules = scheduleRepository.findAllByActiveTrue()
 
         schedules.forEach { schedule ->
