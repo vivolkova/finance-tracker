@@ -5,22 +5,22 @@ import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.util.Date
+import javax.crypto.SecretKey
 
 @Service
-class JwtService {
+class JwtService(
+    @Value("\${jwt.secret}") private val secret: String,
+    @Value("\${jwt.expiration}") private val expiration: Long
+) {
 
-    @Value("\${jwt.secret}")
-    private lateinit var secret: String
-
-    @Value("\${jwt.expiration}")
-    private var expiration: Long = 0
+    // Computed once on first use: by this point Spring has injected `secret`.
+    private val key: SecretKey by lazy { Keys.hmacShaKeyFor(secret.toByteArray()) }
 
     /* Token:
      * Header(algorithm HS256).
      * PayLoad(user info, for example: email, creation and exp date).
      * Signature based on header, payload and secret key*/
     fun generateToken(email: String): String {
-        val key = Keys.hmacShaKeyFor(secret.toByteArray())
         return Jwts.builder()
             .subject(email)
             .issuedAt(Date())
@@ -30,7 +30,6 @@ class JwtService {
     }
 
     fun extractEmail(token: String): String {
-        val key = Keys.hmacShaKeyFor(secret.toByteArray())
         return Jwts.parser()
             .verifyWith(key)
             .build()
@@ -41,7 +40,6 @@ class JwtService {
 
     fun isTokenValid(token: String): Boolean {
         return try {
-            val key = Keys.hmacShaKeyFor(secret.toByteArray())
             Jwts.parser()
                 .verifyWith(key)
                 .build()
