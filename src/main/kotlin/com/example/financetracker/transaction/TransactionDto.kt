@@ -12,7 +12,16 @@ data class TransactionDto(
     val type: TransactionType,
     val categoryId: Long,
     val categoryName: String,
+    val userEmail: String?,
     val createdAt: LocalDateTime
+)
+
+data class UpdateTransactionRequest(
+    val amount: BigDecimal? = null,
+    val description: String? = null,
+    val date: LocalDate? = null,
+    val type: TransactionType? = null,
+    val categoryId: Long? = null
 )
 
 fun Transaction.toDto() = TransactionDto(
@@ -23,5 +32,6 @@ fun Transaction.toDto() = TransactionDto(
     type = type,
     categoryId = category.id,
     categoryName = category.name,
+    userEmail = user?.email,
     createdAt = createdAt
 )

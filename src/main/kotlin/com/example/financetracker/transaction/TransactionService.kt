@@ -1,7 +1,9 @@
 package com.example.financetracker.transaction
 
 import com.example.financetracker.category.CategoryRepository
+import com.example.financetracker.user.User
 import org.slf4j.LoggerFactory
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -37,13 +39,16 @@ class TransactionService(
         val category = categoryRepository.findById(command.categoryId)
             .orElseThrow { NoSuchElementException("Category not found with id: ${command.categoryId}") }
 
+        val currentUser = SecurityContextHolder.getContext().authentication?.principal as? User
+
         return transactionRepository.save(
             Transaction(
                 amount = command.amount,
                 description = command.description,
                 date = command.date,
                 type = command.type,
-                category = category
+                category = category,
+                user = currentUser
             )
         ).toDto()
     }
@@ -55,5 +60,63 @@ class TransactionService(
             throw NoSuchElementException("Transaction not found with id: $id")
         transactionRepository.deleteById(id)
         logger.info("Transaction deleted successfully: $id")
+    }
+
+    @Transactional(readOnly = true)
+    fun getMonthlySummary(year: Int, month: Int): MonthlySummary {
+        val date = LocalDate.of(year, month, 1)
+        val transactions = transactionRepository.findAllByMonth(date)
+
+        val totalIncome = transactions
+            .filter { it.type == TransactionType.INCOME }
+            .fold(BigDecimal.ZERO) { acc, t -> acc + t.amount }
+
+        val totalExpense = transactions
+            .filter { it.type == TransactionType.EXPENSE }
+            .fold(BigDecimal.ZERO) { acc, t -> acc + t.amount }
+
+        val byCategory = transactions
+            .groupBy { it.category }
+            .map { (category, txs) ->
+                CategorySummary(
+                    categoryName = category.name,
+                    type = category.type,
+                    total = txs.fold(BigDecimal.ZERO) { acc, t -> acc + t.amount }
+                )
+            }
+            .sortedByDescending { it.total }
+
+        return MonthlySummary(
+            month = "$year-${month.toString().padStart(2, '0')}",
+            totalIncome = totalIncome,
+            totalExpense = totalExpense,
+            balance = totalIncome - totalExpense,
+            byCategory = byCategory
+        )
+    }
+    @Transactional
+    fun update(id: Long, request: UpdateTransactionRequest): TransactionDto {
+        val transaction = transactionRepository.findById(id)
+            .orElseThrow { NoSuchElementException("Transaction not found with id: $id") }
+
+        val category = if (request.categoryId != null) {
+            categoryRepository.findById(request.categoryId)
+                .orElseThrow { NoSuchElementException("Category not found with id: ${request.categoryId}") }
+        } else {
+            transaction.category
+        }
+
+        val updated = Transaction(
+            id = transaction.id,
+            amount = request.amount ?: transaction.amount,
+            description = request.description ?: transaction.description,
+            date = request.date ?: transaction.date,
+            type = request.type ?: transaction.type,
+            category = category,
+            user = transaction.user,
+            createdAt = transaction.createdAt
+        )
+
+        return transactionRepository.save(updated).toDto()
     }
 }

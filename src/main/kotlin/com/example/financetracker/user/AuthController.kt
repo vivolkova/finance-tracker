@@ -1,0 +1,22 @@
+package com.example.financetracker.user
+
+import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.*
+
+@RestController
+@RequestMapping("/api/auth")
+class AuthController(private val authService: AuthService) {
+
+    @PostMapping("/register")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun register(@RequestBody request: RegisterRequest): AuthResponse =
+        authService.register(request)
+
+    @PostMapping("/login")
+    fun login(@RequestBody request: LoginRequest): AuthResponse =
+        authService.login(request)
+
+    @PostMapping("/refresh")
+    fun refresh(@RequestBody request: RefreshRequest): AuthResponse =
+        authService.refresh(request)
+}

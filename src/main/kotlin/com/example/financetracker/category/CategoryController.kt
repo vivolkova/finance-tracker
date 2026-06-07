@@ -3,6 +3,10 @@ package com.example.financetracker.category
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Size
+import org.jetbrains.annotations.NotNull
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 
@@ -14,7 +18,7 @@ class CategoryController(
 ) {
 
     @GetMapping
-    @Operation(summary = "Get all transactions")
+    @Operation(summary = "Get all categories")
     fun getAll(): List<CategoryDto> = categoryService.getAll()
 
     @GetMapping("/{id}")
@@ -26,7 +30,7 @@ class CategoryController(
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    fun create(@RequestBody request: CreateCategoryRequest): CategoryDto =
+    fun create(@Valid @RequestBody request: CreateCategoryRequest): CategoryDto =
         categoryService.create(request.name, request.type)
 
     @DeleteMapping("/{id}")
@@ -36,6 +40,10 @@ class CategoryController(
 }
 
 data class CreateCategoryRequest(
+    @field:NotBlank(message = "Name cannot be blank")
+    @field:Size(max = 100, message = "Name must be less than 100 characters")
     val name: String,
+
+    @field:NotNull(value = "Type cannot be null")
     val type: CategoryType
 )
