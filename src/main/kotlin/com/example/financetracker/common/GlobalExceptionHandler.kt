@@ -1,10 +1,12 @@
 package com.example.financetracker.common
 
+import jakarta.persistence.OptimisticLockException
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.http.ResponseEntity
+import org.springframework.orm.ObjectOptimisticLockingFailureException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -35,6 +37,25 @@ class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleBadRequest(ex: IllegalArgumentException): ProblemDetail =
         problem(HttpStatus.BAD_REQUEST, "Bad Request", ex.message ?: "Bad request")
+
+    // jakarta.persistence.OptimisticLockException — thrown manually in TransactionService
+    @ExceptionHandler(OptimisticLockException::class)
+    fun handleOptimisticLock(ex: OptimisticLockException): ProblemDetail =
+        problem(
+            status = HttpStatus.CONFLICT,
+            title = "Conflict",
+            detail = ex.message ?: "Data was modified by another user. Please refresh and try again."
+        )
+
+    // ObjectOptimisticLockingFailureException — thrown by Spring Data JPA when two
+    // concurrent requests collide at the database level (Hibernate wraps JPA exception).
+    @ExceptionHandler(ObjectOptimisticLockingFailureException::class)
+    fun handleSpringOptimisticLock(ex: ObjectOptimisticLockingFailureException): ProblemDetail =
+        problem(
+            status = HttpStatus.CONFLICT,
+            title = "Conflict",
+            detail = "Data was modified by another user. Please refresh and try again."
+        )
 
     // ── Technique 2: a custom extension property carrying structured data ──────
     // Field validation errors are attached as an "errors" array, so the client

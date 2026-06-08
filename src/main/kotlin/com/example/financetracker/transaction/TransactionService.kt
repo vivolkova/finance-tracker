@@ -2,6 +2,7 @@ package com.example.financetracker.transaction
 
 import com.example.financetracker.category.CategoryRepository
 import com.example.financetracker.user.User
+import jakarta.persistence.OptimisticLockException
 import org.slf4j.LoggerFactory
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
@@ -15,6 +16,15 @@ data class CreateTransactionCommand(
     val date: LocalDate,
     val type: TransactionType,
     val categoryId: Long
+)
+
+data class UpdateTransactionCommand(
+    val amount: BigDecimal? = null,
+    val description: String? = null,
+    val date: LocalDate? = null,
+    val type: TransactionType? = null,
+    val categoryId: Long? = null,
+    val version: Long
 )
 
 @Service
@@ -95,28 +105,37 @@ class TransactionService(
         )
     }
     @Transactional
-    fun update(id: Long, request: UpdateTransactionRequest): TransactionDto {
+    fun update(id: Long, command: UpdateTransactionCommand): TransactionDto {
         val transaction = transactionRepository.findById(id)
             .orElseThrow { NoSuchElementException("Transaction not found with id: $id") }
 
-        val category = if (request.categoryId != null) {
-            categoryRepository.findById(request.categoryId)
-                .orElseThrow { NoSuchElementException("Category not found with id: ${request.categoryId}") }
+        if (transaction.version != command.version) {
+            throw OptimisticLockException(
+                "Transaction was modified by another user. Please refresh and try again."
+            )
+        }
+
+        val category = if (command.categoryId != null) {
+            categoryRepository.findById(command.categoryId)
+                .orElseThrow { NoSuchElementException("Category not found with id: ${command.categoryId}") }
         } else {
             transaction.category
         }
 
         val updated = Transaction(
             id = transaction.id,
-            amount = request.amount ?: transaction.amount,
-            description = request.description ?: transaction.description,
-            date = request.date ?: transaction.date,
-            type = request.type ?: transaction.type,
+            amount = command.amount ?: transaction.amount,
+            description = command.description ?: transaction.description,
+            date = command.date ?: transaction.date,
+            type = command.type ?: transaction.type,
             category = category,
             user = transaction.user,
-            createdAt = transaction.createdAt
+            createdAt = transaction.createdAt,
+            version = transaction.version
         )
 
-        return transactionRepository.save(updated).toDto()
+        // saveAndFlush forces the SQL UPDATE immediately so Hibernate can write
+        // back the incremented version to the entity before toDto() is called.
+        return transactionRepository.saveAndFlush(updated).toDto()
     }
 }
