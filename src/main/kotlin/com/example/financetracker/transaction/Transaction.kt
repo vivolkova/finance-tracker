@@ -38,6 +38,9 @@ class Transaction(
 
     @Column(name = "created_at", nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
+
+    @Version
+    var version: Long = 0,
 ) {
 
     override fun equals(other: Any?): Boolean {

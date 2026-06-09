@@ -55,7 +55,14 @@ class TransactionController(
     ): TransactionDto =
         transactionService.update(
             id,
-            request
+            UpdateTransactionCommand(
+                request.amount,
+                request.description,
+                request.date,
+                request.type,
+                request.categoryId,
+                request.version
+            )
         )
 }
 

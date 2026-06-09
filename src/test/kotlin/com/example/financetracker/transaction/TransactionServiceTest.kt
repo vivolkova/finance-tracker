@@ -6,6 +6,7 @@ import com.example.financetracker.category.CategoryType
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.math.BigDecimal
@@ -24,14 +25,21 @@ class TransactionServiceTest {
         type = CategoryType.INCOME
     )
 
-    private val transaction = Transaction(
-        id = 1L,
-        amount = BigDecimal("5000"),
-        description = "Monthly salary",
-        date = LocalDate.of(2026, 5, 27),
-        type = TransactionType.INCOME,
-        category = category
-    )
+    // Recreated before each test — prevents shared mutable state via var version.
+    private lateinit var transaction: Transaction
+
+    @BeforeEach
+    fun setUp() {
+        transaction = Transaction(
+            id = 1L,
+            amount = BigDecimal("5000"),
+            description = "Monthly salary",
+            date = LocalDate.of(2026, 5, 27),
+            type = TransactionType.INCOME,
+            category = category,
+            version = 0
+        )
+    }
 
     @Test
     fun `getAll should return list of TransactionDto`() {
@@ -127,11 +135,12 @@ class TransactionServiceTest {
     @Test
     fun `update should change provided fields and keep the others`() {
         every { transactionRepository.findById(1L) } returns Optional.of(transaction)
-        every { transactionRepository.save(any()) } answers { firstArg() }
+        every { transactionRepository.saveAndFlush(any()) } answers { firstArg() }
 
-        val request = UpdateTransactionRequest(
+        val request = UpdateTransactionCommand(
             amount = BigDecimal("7000"),
-            description = "Raise"
+            description = "Raise",
+            version = transaction.version
         )
 
         val result = transactionService.update(1L, request)
@@ -140,6 +149,7 @@ class TransactionServiceTest {
         assert(result.description == "Raise")
         assert(result.date == LocalDate.of(2026, 5, 27)) // unchanged
         assert(result.categoryName == "Salary")           // unchanged
+        verify(exactly = 1) { transactionRepository.saveAndFlush(any()) }
         verify(exactly = 0) { categoryRepository.findById(any()) }
     }
 
@@ -148,12 +158,14 @@ class TransactionServiceTest {
         val newCategory = Category(id = 2L, name = "Bonus", type = CategoryType.INCOME)
         every { transactionRepository.findById(1L) } returns Optional.of(transaction)
         every { categoryRepository.findById(2L) } returns Optional.of(newCategory)
-        every { transactionRepository.save(any()) } answers { firstArg() }
+        every { transactionRepository.saveAndFlush(any()) } answers { firstArg() }
 
-        val result = transactionService.update(1L, UpdateTransactionRequest(categoryId = 2L))
+        val result =
+            transactionService.update(1L, UpdateTransactionCommand(categoryId = 2L, version = transaction.version))
 
         assert(result.categoryId == 2L)
         assert(result.categoryName == "Bonus")
+        verify(exactly = 1) { transactionRepository.saveAndFlush(any()) }
     }
 
     @Test
@@ -161,9 +173,9 @@ class TransactionServiceTest {
         every { transactionRepository.findById(99L) } returns Optional.empty()
 
         assertThrows<NoSuchElementException> {
-            transactionService.update(99L, UpdateTransactionRequest(amount = BigDecimal("1")))
+            transactionService.update(99L, UpdateTransactionCommand(amount = BigDecimal("1"), version = 0))
         }
-        verify(exactly = 0) { transactionRepository.save(any()) }
+        verify(exactly = 0) { transactionRepository.saveAndFlush(any()) }
     }
 
     @Test
@@ -197,5 +209,35 @@ class TransactionServiceTest {
         assert(result.byCategory[0].categoryName == "Salary")
         assert(result.byCategory[1].categoryName == "Rent")
         assert(result.byCategory[1].total == BigDecimal("2000"))
+    }
+
+    @Test
+    fun `update should succeed when version matches and return incremented version`() {
+        every { transactionRepository.findById(1L) } returns Optional.of(transaction)
+        every { transactionRepository.saveAndFlush(any()) } answers {
+            firstArg<Transaction>().apply { version++ }
+        }
+
+        val result = transactionService.update(
+            1L,
+            UpdateTransactionCommand(amount = BigDecimal("999"), version = transaction.version)
+        )
+
+        verify(exactly = 1) { transactionRepository.saveAndFlush(any()) }
+        assert(result.amount == BigDecimal("999"))
+        assert(result.version == 1L)
+    }
+
+    @Test
+    fun `update should throw OptimisticLockException when version does not match`() {
+        every { transactionRepository.findById(1L) } returns Optional.of(transaction) // version=0
+
+        assertThrows<jakarta.persistence.OptimisticLockException> {
+            transactionService.update(
+                1L,
+                UpdateTransactionCommand(amount = BigDecimal("999"), version = 99L) // wrong version
+            )
+        }
+        verify(exactly = 0) { transactionRepository.saveAndFlush(any()) }
     }
 }

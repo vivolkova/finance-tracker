@@ -1,0 +1,35 @@
+name: Run Tests
+run-name: >-
+  ${{ github.event_name == 'pull_request' 
+      && format('PR #{0}: {1} → master', github.event.number, github.head_ref) 
+      || format('Push to {0} by {1}', github.ref_name, github.actor) }}
+on:
+  push:
+    branches: [ "dev", "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle Wrapper
+        run: ./gradlew build
