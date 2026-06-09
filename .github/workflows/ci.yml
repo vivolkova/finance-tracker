@@ -1,5 +1,5 @@
 name: CI
-run-name: Run tests for ${{github.repository}} githubRef:${{github.ref}} by ${{ github.actor }}
+run-name: Run tests for ${{github.repository}} refName:${{github.ref_name}} by ${{ github.actor }}
 on:
   push:
     branches: [ "dev", "master" ]
