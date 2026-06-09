@@ -1,5 +1,8 @@
 name: Run Tests
-run-name: Run tests for ${{github.ref_name}} branch by ${{ github.actor }}
+run-name: >-
+  ${{ github.event_name == 'pull_request' 
+      && format('PR #{0}: {1} → master', github.event.number, github.head_ref) 
+      || format('Push to {0} by {1}', github.ref_name, github.actor) }}
 on:
   push:
     branches: [ "dev", "master" ]
