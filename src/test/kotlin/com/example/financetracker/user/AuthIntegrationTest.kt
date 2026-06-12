@@ -8,6 +8,7 @@ import org.junit.jupiter.api.assertNotNull
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.resttestclient.TestRestTemplate
 import org.springframework.http.HttpStatus
+import org.springframework.http.ProblemDetail
 import kotlin.test.Test
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -35,5 +36,14 @@ class AuthIntegrationTest : IntegrationTestBase() {
         val loginResult = restTemplate.postForEntity("/api/auth/login", loginRequest, AuthResponse::class.java)
         assertNotNull(loginResult.body?.accessToken, "Wrong Access token")
         assertNotNull(loginResult.body?.refreshToken, "Wrong Refresh Token")
+    }
+
+    @Test
+    fun `wrong email, login test`() {
+        val loginRequest = LoginRequest("email@email", password)
+        val loginResult =
+            restTemplate.postForEntity("/api/auth/login", loginRequest, ProblemDetail::class.java)
+        assertEquals(HttpStatus.BAD_REQUEST, loginResult.statusCode, "Wrong Status Code")
+        assertEquals("Invalid email or password", loginResult.body?.detail)
     }
 }
