@@ -2,28 +2,17 @@ package com.example.financetracker.user
 
 import com.example.financetracker.IntegrationTestBase
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.TestInstance
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.resttestclient.TestRestTemplate
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import kotlin.test.Test
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AuthIntegrationTest : IntegrationTestBase() {
 
-    @Autowired
-    lateinit var restTemplate: TestRestTemplate
-
-    val email = "test@mail.ru"
-    val password = "1234"
-
-    @BeforeAll
+    @Test
     fun `register test`() {
-        val user = RegisterRequest(email, password)
+        val user = RegisterRequest("user1@mail.ru", "1234")
         val registerResult = restTemplate.postForEntity("/api/auth/register", user, AuthResponse::class.java)
         assertEquals(HttpStatus.CREATED, registerResult.statusCode, "Wrong Status Code")
         assertNotNull(registerResult.body?.accessToken, "Wrong Access token")
@@ -32,8 +21,8 @@ class AuthIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `register test with duplicate email`() {
-        val user = RegisterRequest(email, password)
-        val registerResult = restTemplate.postForEntity("/api/auth/register", user, ProblemDetail::class.java)
+        val userDupl = RegisterRequest(email, password)
+        val registerResult = restTemplate.postForEntity("/api/auth/register", userDupl, ProblemDetail::class.java)
         assertEquals(HttpStatus.BAD_REQUEST, registerResult.statusCode, "Wrong Status Code")
         assertEquals("User with email $email already exists", registerResult.body?.detail, "Wrong result message")
     }
@@ -82,7 +71,7 @@ class AuthIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `invalid refresh token`(){
+    fun `invalid refresh token`() {
         val refreshResult = restTemplate.postForEntity(
             "/api/auth/refresh",
             RefreshRequest("invalid refresh token"),
@@ -91,4 +80,5 @@ class AuthIntegrationTest : IntegrationTestBase() {
         assertEquals(HttpStatus.BAD_REQUEST, refreshResult.statusCode)
         assertEquals("Invalid refresh token", refreshResult.body?.detail)
     }
+
 }
