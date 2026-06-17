@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
-import org.springframework.http.HttpStatusCode
 import org.springframework.http.ProblemDetail
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -16,6 +15,17 @@ class CategoryIntegrationTest : IntegrationTestBase() {
     fun `create category`() {
         val (_, resultStatus) =  addCategory("Groceries", CategoryType.EXPENSE)
         assertEquals(HttpStatus.CREATED, resultStatus)
+    }
+
+    @Test
+    fun `create category, invalid body`() {
+        val result =  restTemplate.exchange(
+            "/api/categories",
+            HttpMethod.POST,
+            HttpEntity<Void>( headers),
+            ProblemDetail::class.java
+        )
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.statusCode)
     }
 
     @Test
@@ -97,6 +107,18 @@ class CategoryIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `delete by wrong id`() {
+        val result = restTemplate.exchange(
+            "/api/categories/{id}",
+            HttpMethod.DELETE,
+            HttpEntity<Void>(headers),
+            ProblemDetail::class.java,
+            mapOf("id" to 1000)
+        )
+        assertEquals(HttpStatus.NOT_FOUND, result.statusCode)
+    }
+
+    @Test
     fun `delete by id, no token`() {
         val result = restTemplate.exchange(
             "/api/categories/{id}",
@@ -106,16 +128,5 @@ class CategoryIntegrationTest : IntegrationTestBase() {
             mapOf("id" to 1),
         )
         assertEquals(HttpStatus.UNAUTHORIZED, result.statusCode)
-    }
-
-    private fun addCategory(name: String, type: CategoryType): Pair<CategoryDto, HttpStatusCode>{
-        val createRequest = CreateCategoryRequest(name, type)
-        val result =  restTemplate.exchange(
-            "/api/categories",
-            HttpMethod.POST,
-            HttpEntity(createRequest, headers),
-            CategoryDto::class.java
-        )
-        return Pair(result.body!!, result.statusCode)
     }
 }

@@ -1,6 +1,9 @@
 package com.example.financetracker
 
 
+import com.example.financetracker.category.CategoryDto
+import com.example.financetracker.category.CategoryType
+import com.example.financetracker.category.CreateCategoryRequest
 import com.example.financetracker.user.AuthResponse
 import com.example.financetracker.user.RegisterRequest
 import org.junit.jupiter.api.BeforeEach
@@ -8,7 +11,10 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.resttestclient.TestRestTemplate
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatusCode
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
@@ -59,6 +65,17 @@ abstract class IntegrationTestBase {
             registry.add("spring.flyway.enabled") { "true" }
             registry.add("spring.jpa.hibernate.ddl-auto") { "validate" }
         }
+    }
+
+    fun addCategory(name: String, type: CategoryType): Pair<CategoryDto, HttpStatusCode>{
+        val createRequest = CreateCategoryRequest(name, type)
+        val result =  restTemplate.exchange(
+            "/api/categories",
+            HttpMethod.POST,
+            HttpEntity(createRequest, headers),
+            CategoryDto::class.java
+        )
+        return Pair(result.body!!, result.statusCode)
     }
 
 }
