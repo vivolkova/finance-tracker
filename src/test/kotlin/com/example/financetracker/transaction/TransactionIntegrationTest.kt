@@ -22,28 +22,31 @@ class TransactionIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `get by id`() {
+        val amount = BigDecimal(150)
         val id = addTransaction(
-            "Groceries", CategoryType.EXPENSE, BigDecimal(150), description = "test transaction",
-            TransactionType.EXPENSE
+            "Groceries", CategoryType.EXPENSE, amount, TransactionType.EXPENSE
         )
 
-        restTemplate.exchange(
+        val result = restTemplate.exchange(
             "/api/transactions/{id}",
             HttpMethod.GET,
             HttpEntity<Void>(headers),
             TransactionDto::class.java, mapOf("id" to id)
         )
+        assertEquals(HttpStatus.OK, result.statusCode)
+        assertEquals(0, result.body!!.amount.compareTo(amount))
+        assertEquals(id, result.body!!.id)
     }
 
     @Test
     fun `get all`() {
         addTransaction(
-            "Groceries", CategoryType.EXPENSE, BigDecimal(150), description = "test transaction",
+            "Groceries", CategoryType.EXPENSE, BigDecimal(150),
             TransactionType.EXPENSE
         )
 
         addTransaction(
-            "Salary", CategoryType.INCOME, BigDecimal(150), description = "test transaction",
+            "Salary", CategoryType.INCOME, BigDecimal(150),
             TransactionType.INCOME
         )
 
@@ -89,10 +92,11 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `delete, no token`() {
         val result = restTemplate.exchange(
-            "/api/transactions",
+            "/api/transactions/{id}",
             HttpMethod.DELETE,
             HttpEntity.EMPTY,
-            ProblemDetail::class.java
+            ProblemDetail::class.java,
+            mapOf("id" to 1)
         )
         assertEquals(HttpStatus.UNAUTHORIZED, result.statusCode)
     }
@@ -112,8 +116,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `delete by id`() {
         val id = addTransaction(
-            "Groceries", CategoryType.EXPENSE, BigDecimal(150), description = "test transaction",
-            TransactionType.EXPENSE
+            "Groceries", CategoryType.EXPENSE, BigDecimal(150), TransactionType.EXPENSE
         )
         val result = restTemplate.exchange(
             "/api/transactions/{id}",
@@ -128,7 +131,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `get summary, no parameters`() {
         val result = restTemplate.exchange(
-            "/api/transactions/summary?year={year}&month={month}",
+            "/api/transactions/summary",
             HttpMethod.GET,
             HttpEntity<Void>(headers),
             ProblemDetail::class.java
@@ -137,14 +140,14 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     }
     @Test
     fun `get summary`() {
+        val incomeAmount = BigDecimal(200)
+        val expenseAmount = BigDecimal(150)
         addTransaction(
-            "Groceries", CategoryType.EXPENSE, BigDecimal(150), description = "test transaction",
-            TransactionType.EXPENSE
+            "Groceries", CategoryType.EXPENSE, expenseAmount, TransactionType.EXPENSE
         )
 
         addTransaction(
-            "Salary", CategoryType.INCOME, BigDecimal(150), description = "test transaction",
-            TransactionType.INCOME
+            "Salary", CategoryType.INCOME, incomeAmount, TransactionType.INCOME
         )
 
         val result = restTemplate.exchange(
@@ -155,14 +158,17 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             mapOf("year" to LocalDate.now().year, "month" to LocalDate.now().monthValue)
         )
         assertEquals(HttpStatus.OK, result.statusCode)
+        assertEquals(0, result.body!!.totalIncome.compareTo(incomeAmount), "Wrong IncomeAmount")
+        assertEquals(0, result.body!!.totalExpense .compareTo(expenseAmount), "Wrong Expense Amount")
+        assertEquals(2, result.body!!.byCategory.size)
     }
 
     @Test
     fun `update transaction`(){
         val id = addTransaction(
-            "Groceries", CategoryType.EXPENSE, BigDecimal(150), description = "test transaction",
-            TransactionType.EXPENSE
+            "Groceries", CategoryType.EXPENSE, BigDecimal(150), TransactionType.EXPENSE
         )
+        val newAmount = BigDecimal(200)
         val transaction = restTemplate.exchange(
             "/api/transactions/{id}",
             HttpMethod.GET,
@@ -170,7 +176,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             TransactionDto::class.java,
             mapOf("id" to id)
         )
-        val request = transaction.body!!.copy(amount = BigDecimal(200))
+        val request = transaction.body!!.copy(amount = newAmount).toUpdateTransactionRequest()
         val result = restTemplate.exchange(
             "/api/transactions/{id}",
             HttpMethod.PATCH,
@@ -178,14 +184,14 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             TransactionDto::class.java,
             mapOf("id" to id)
         )
-        assertEquals(BigDecimal(200), result.body!!.amount)
+        assertEquals(HttpStatus.OK, result.statusCode)
+        assertEquals(0, result.body!!.amount.compareTo(newAmount))
     }
 
     @Test
     fun `patch, version conflict`(){
         val id = addTransaction(
-            "Groceries", CategoryType.EXPENSE, BigDecimal(150), description = "test transaction",
-            TransactionType.EXPENSE
+            "Groceries", CategoryType.EXPENSE, BigDecimal(150), TransactionType.EXPENSE
         )
         val transaction = restTemplate.exchange(
             "/api/transactions/{id}",
@@ -194,7 +200,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             TransactionDto::class.java,
             mapOf("id" to id)
         )
-        val request = transaction.body!!.copy(amount = BigDecimal(200), version = 3)
+        val request = transaction.body!!.copy(amount = BigDecimal(200), version = 3).toUpdateTransactionRequest()
         val result = restTemplate.exchange(
             "/api/transactions/{id}",
             HttpMethod.PATCH,
@@ -205,12 +211,12 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         assertEquals(HttpStatus.CONFLICT, result.statusCode)
     }
 
-    fun addTransaction(
+    private fun addTransaction(
         categoryName: String,
         categoryType: CategoryType,
         amount: BigDecimal,
-        description: String,
-        transactionType: TransactionType
+        transactionType: TransactionType,
+        description: String? = "test transaction",
     ): Long {
         val (categoryResponse, _) = addCategory(categoryName, categoryType)
 
@@ -230,4 +236,14 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         assertEquals(HttpStatus.CREATED, result.statusCode)
         return result.body!!.id
     }
+
+    private fun TransactionDto.toUpdateTransactionRequest() = UpdateTransactionRequest(
+        amount = amount,
+        description = description,
+        date = date,
+        type = type,
+        categoryId = categoryId,
+        version = version
+    )
+
 }
