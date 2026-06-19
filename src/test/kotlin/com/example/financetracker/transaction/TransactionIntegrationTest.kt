@@ -211,31 +211,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         assertEquals(HttpStatus.CONFLICT, result.statusCode)
     }
 
-    private fun addTransaction(
-        categoryName: String,
-        categoryType: CategoryType,
-        amount: BigDecimal,
-        transactionType: TransactionType,
-        description: String? = "test transaction",
-    ): Long {
-        val (categoryResponse, _) = addCategory(categoryName, categoryType)
 
-        val request = CreateTransactionRequest(
-            amount = amount,
-            description = description,
-            date = LocalDate.now(),
-            type = transactionType,
-            categoryId = categoryResponse.id
-        )
-
-        val result = restTemplate.exchange(
-            "/api/transactions", HttpMethod.POST, HttpEntity(request, headers),
-            TransactionDto::class.java
-        )
-
-        assertEquals(HttpStatus.CREATED, result.statusCode)
-        return result.body!!.id
-    }
 
     private fun TransactionDto.toUpdateTransactionRequest() = UpdateTransactionRequest(
         amount = amount,

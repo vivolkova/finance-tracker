@@ -4,6 +4,9 @@ package com.example.financetracker
 import com.example.financetracker.category.CategoryDto
 import com.example.financetracker.category.CategoryType
 import com.example.financetracker.category.CreateCategoryRequest
+import com.example.financetracker.transaction.CreateTransactionRequest
+import com.example.financetracker.transaction.TransactionDto
+import com.example.financetracker.transaction.TransactionType
 import com.example.financetracker.user.AuthResponse
 import com.example.financetracker.user.RegisterRequest
 import org.junit.jupiter.api.BeforeEach
@@ -14,11 +17,15 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatusCode
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.postgresql.PostgreSQLContainer
+import java.math.BigDecimal
+import java.time.LocalDate
+import kotlin.test.assertEquals
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestRestTemplate
@@ -76,6 +83,32 @@ abstract class IntegrationTestBase {
             CategoryDto::class.java
         )
         return Pair(result.body!!, result.statusCode)
+    }
+
+    fun addTransaction(
+        categoryName: String,
+        categoryType: CategoryType,
+        amount: BigDecimal,
+        transactionType: TransactionType,
+        description: String? = "test transaction",
+    ): Long {
+        val (categoryResponse, _) = addCategory(categoryName, categoryType)
+
+        val request = CreateTransactionRequest(
+            amount = amount,
+            description = description,
+            date = LocalDate.now(),
+            type = transactionType,
+            categoryId = categoryResponse.id
+        )
+
+        val result = restTemplate.exchange(
+            "/api/transactions", HttpMethod.POST, HttpEntity(request, headers),
+            TransactionDto::class.java
+        )
+
+        assertEquals(HttpStatus.CREATED, result.statusCode)
+        return result.body!!.id
     }
 
 }
