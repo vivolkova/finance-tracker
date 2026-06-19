@@ -24,6 +24,7 @@ class Transaction(
     @Column(nullable = false)
     val date: LocalDate,
 
+    @Deprecated("Use category.type instead. Will be removed in v2.0")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     val type: TransactionType,
