@@ -22,7 +22,7 @@ A pet project for learning backend development.
 - **Springdoc OpenAPI / Swagger UI** — API documentation
 - **MockK** + **JUnit 5** — testing
 - **Docker** — local infrastructure
-- **Kubernetes** — deployment (coming soon)
+- **Kubernetes** — deployment manifests (`k8s/`)
 
 ## Getting Started
 
@@ -34,13 +34,13 @@ A pet project for learning backend development.
 
 1. Clone the repository
 ```bash
-   git clone https://github.com/vivolkova/finance-tracker.git
-   cd finance-tracker
+git clone https://github.com/vivolkova/finance-tracker.git
+cd finance-tracker
 ```
 
 2. Run the application (Docker starts automatically)
 ```bash
-   ./gradlew bootRun
+./gradlew bootRun
 ```
 
 API will be available at `http://localhost:8080`  
@@ -67,6 +67,11 @@ Authorization: Bearer <accessToken>
 | POST | `/api/auth/register` | Register a new user |
 | POST | `/api/auth/login` | Log in and receive tokens |
 | POST | `/api/auth/refresh` | Exchange a refresh token for new tokens |
+
+### Users
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/users` | List all users (public endpoint) |
 
 ### Categories
 | Method | Endpoint | Description |
@@ -100,10 +105,41 @@ Supported frequencies: `DAILY`, `WEEKLY`, `MONTHLY`, `YEARLY`.
 ## API Documentation
 
 Full interactive API documentation available via Swagger UI:
+
 http://localhost:8080/swagger-ui/index.html
 
 OpenAPI JSON (importable to Postman):
+
 http://localhost:8080/v3/api-docs
+
+## Deployment
+
+### Docker
+
+Build the JAR, then the image (`Dockerfile` uses a Temurin 21 JRE base, exposes 8080):
+```bash
+./gradlew bootJar
+docker build -t finance-tracker:1.0 .
+```
+
+### Kubernetes
+
+Manifests live in `k8s/` — namespace, ConfigMap, PostgreSQL StatefulSet/Service/PVC,
+and the app Deployment. The app reads its DB connection from environment variables
+injected via the `finance-config` ConfigMap and the `finance-secrets` Secret.
+
+```bash
+# namespace + non-secret config
+kubectl apply -f k8s/namespace.yaml -f k8s/configMap.yaml
+
+# DB password (the Secret is not committed)
+kubectl create secret generic finance-secrets -n finance-tracker \
+  --from-literal=DB_PASSWORD=<your-password>
+
+# PostgreSQL, then the app
+kubectl apply -f k8s/postgres-pvc.yaml -f k8s/postgres-service.yaml -f k8s/postgres-statefulset.yaml
+kubectl apply -f k8s/app-deployment.yaml
+```
 
 ## Configuration
 
@@ -111,16 +147,30 @@ Key settings live in `src/main/resources/application.properties`:
 
 | Property | Description |
 |----------|-------------|
-| `spring.datasource.*` | PostgreSQL connection |
+| `spring.datasource.*` | PostgreSQL connection (env-driven, see below) |
 | `jwt.secret` | HMAC signing key (must be ≥ 256 bits for HS256) |
 | `jwt.expiration` | Access token lifetime, ms |
 | `jwt.refresh-expiration` | Refresh token lifetime, ms |
+
+The datasource is configured via environment variables (with local defaults), so the
+same build runs locally, in Docker, and in Kubernetes:
+
+| Env var | Default | Description |
+|---------|---------|-------------|
+| `DB_HOST` | `localhost` | PostgreSQL host |
+| `DB_PORT` | `5432` | PostgreSQL port |
+| `DB_NAME` | `finance_tracker` | Database name |
+| `DB_USERNAME` | `postgres` | Database user |
+| `DB_PASSWORD` | — | Database password (set via the `finance-secrets` Secret in k8s) |
 
 ## Running Tests
 
 ```bash
 ./gradlew test
 ```
+
+The suite includes unit tests (MockK) and integration tests that spin up a real
+PostgreSQL via **Testcontainers**, so Docker must be running.
 
 ## License
 MIT
