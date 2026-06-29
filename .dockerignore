@@ -1,0 +1,6 @@
+.git
+.gradle
+build
+.github
+k8s
+*.md
