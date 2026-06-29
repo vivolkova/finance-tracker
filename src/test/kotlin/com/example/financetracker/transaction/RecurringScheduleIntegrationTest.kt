@@ -30,7 +30,7 @@ class RecurringScheduleIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `delete by id`() {
+    fun `delete by TransactionId`() {
         val transactionId = addTransaction("Groceries", CategoryType.EXPENSE, BigDecimal(100), TransactionType.EXPENSE)
         createSchedule(transactionId, Frequency.DAILY)
 
