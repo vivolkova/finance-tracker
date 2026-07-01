@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: finance-tracker
-          image: ghcr.io/vivolkova/finance-tracker:sha-123 // заглушка, потом будет заменена на версию
+          image: ghcr.io/vivolkova/finance-tracker:sha-123 #заглушка, потом будет заменена на версию
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
