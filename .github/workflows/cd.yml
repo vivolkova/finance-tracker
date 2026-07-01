@@ -33,10 +33,10 @@ jobs:
 
   deploy:
     needs: build-push
-    runs-on: self-hosted          # твой ноут с доступом к minikube
+    runs-on: self-hosted
     steps:
+      - uses: actions/checkout@v4
       - run: |
-          kubectl set image deployment/finance-tracker `
-            finance-tracker=ghcr.io/vivolkova/finance-tracker:sha-${{ github.sha }} `
-            -n finance-tracker
-          kubectl rollout status deployment/finance-tracker -n finance-tracker
+          (Get-Content k8s/kustomization.yaml) -replace 'newTag:.*', 'newTag: sha-${{ github.sha }}' | Set-Content k8s/kustomization.yaml
+          kubectl apply -k k8s/
+          kubectl rollout status deployment/finance-tracker -n finance-tracker --timeout=120s
