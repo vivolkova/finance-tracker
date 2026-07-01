@@ -22,7 +22,8 @@ A pet project for learning backend development.
 - **Springdoc OpenAPI / Swagger UI** — API documentation
 - **MockK** + **JUnit 5** — testing
 - **Docker** — local infrastructure
-- **Kubernetes** — deployment manifests (`k8s/`)
+- **Kubernetes** + **Kustomize** — deployment manifests (`k8s/`)
+- **GitHub Actions** — CI (tests) and CD (build, push to GHCR, deploy)
 
 ## Getting Started
 
@@ -122,24 +123,41 @@ Build the JAR, then the image (`Dockerfile` uses a Temurin 21 JRE base, exposes 
 docker build -t finance-tracker:1.0 .
 ```
 
+Published images are available on GitHub Container Registry:
+`ghcr.io/vivolkova/finance-tracker` (tagged with the commit SHA and `latest`).
+
 ### Kubernetes
 
-Manifests live in `k8s/` — namespace, ConfigMap, PostgreSQL StatefulSet/Service/PVC,
-and the app Deployment. The app reads its DB connection from environment variables
-injected via the `finance-config` ConfigMap and the `finance-secrets` Secret.
+Manifests live in `k8s/` and are bundled with **Kustomize** (`kustomization.yaml`):
+namespace, ConfigMap, PostgreSQL StatefulSet/Service/PVC, the app Deployment/Service,
+and an Ingress (`finance-tracker.local`, nginx). The app reads its DB connection from
+environment variables injected via the `finance-config` ConfigMap and the
+`finance-secrets` Secret.
 
 ```bash
-# namespace + non-secret config
-kubectl apply -f k8s/namespace.yaml -f k8s/configMap.yaml
-
 # DB password (the Secret is not committed)
 kubectl create secret generic finance-secrets -n finance-tracker \
   --from-literal=DB_PASSWORD=<your-password>
 
-# PostgreSQL, then the app
-kubectl apply -f k8s/postgres-pvc.yaml -f k8s/postgres-service.yaml -f k8s/postgres-statefulset.yaml
-kubectl apply -f k8s/app-deployment.yaml
+# apply everything through Kustomize
+kubectl apply -k k8s/
 ```
+
+> The namespace is created by the same `kubectl apply -k` run, so create the Secret
+> after the first apply (or add it to your cluster out-of-band) if the namespace does
+> not yet exist.
+
+## CI/CD
+
+Two GitHub Actions workflows live in `.github/workflows/`:
+
+- **`run_tests.yml` (CI)** — on pushes to `dev`/`master` and PRs to `master`: builds
+  with the Gradle Wrapper on JDK 21, runs the test suite, and uploads the test reports
+  as an artifact.
+- **`cd.yml` (CD)** — on push to `master` (or manual `workflow_dispatch`): builds the
+  Docker image and pushes it to `ghcr.io/vivolkova/finance-tracker` (tagged with the
+  long commit SHA and `latest`), then a self-hosted runner pins that tag in
+  `k8s/kustomization.yaml`, runs `kubectl apply -k k8s/`, and waits for the rollout.
 
 ## Configuration
 
