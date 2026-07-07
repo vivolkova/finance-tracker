@@ -8,3 +8,4 @@ data:
   DB_PORT: "5432"
   DB_NAME: finance_tracker
   DB_USERNAME: postgres
+  REDIS_HOST: redis
