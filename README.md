@@ -9,6 +9,7 @@ A pet project for learning backend development.
 - 🏷️ **Categories** — income/expense categories
 - 💸 **Transactions** — full CRUD plus partial update
 - 📊 **Monthly summary** — totals, balance, and per-category breakdown
+- ⚡ **Redis caching** — monthly summary cached with a TTL and evicted on writes
 - 🔁 **Recurring transactions** — schedules that auto-create transactions on a cron job
 - 📖 **OpenAPI / Swagger UI** — interactive API docs
 
@@ -16,9 +17,11 @@ A pet project for learning backend development.
 
 - **Kotlin** + **Spring Boot 4**
 - **PostgreSQL** — database
+- **Redis** — cache backend (Spring Cache abstraction + Lettuce)
 - **Spring Data JPA** + **Hibernate** — data access
 - **Flyway** — database migrations
 - **Spring Security** + **JWT (jjwt)** — authentication
+- **Spring Boot Actuator** — health, metrics, and cache endpoints
 - **Springdoc OpenAPI / Swagger UI** — API documentation
 - **MockK** + **JUnit 5** — testing
 - **Docker** — local infrastructure
@@ -39,7 +42,7 @@ git clone https://github.com/vivolkova/finance-tracker.git
 cd finance-tracker
 ```
 
-2. Run the application (Docker starts automatically)
+2. Run the application (Docker Compose starts PostgreSQL and Redis automatically)
 ```bash
 ./gradlew bootRun
 ```
@@ -103,6 +106,14 @@ A background job (`RecurringTransactionScheduler`) runs every minute, creates du
 transactions from active schedules, and deactivates schedules past their end date.
 Supported frequencies: `DAILY`, `WEEKLY`, `MONTHLY`, `YEARLY`.
 
+## Caching
+
+The monthly summary is backed by **Redis**. `getMonthlySummary` is `@Cacheable`
+(cache `monthlySummary`, keyed by `year-month`) with a **10-minute TTL**; values are
+stored as JSON (`GenericJacksonJsonRedisSerializer`). Every transaction
+create/update/delete evicts the whole `monthlySummary` cache, so totals never go
+stale. Caching is turned on with `@EnableCaching` and configured in `CacheConfig`.
+
 ## API Documentation
 
 Full interactive API documentation available via Swagger UI:
@@ -129,10 +140,10 @@ Published images are available on GitHub Container Registry:
 ### Kubernetes
 
 Manifests live in `k8s/` and are bundled with **Kustomize** (`kustomization.yaml`):
-namespace, ConfigMap, PostgreSQL StatefulSet/Service/PVC, the app Deployment/Service,
-and an Ingress (`finance-tracker.local`, nginx). The app reads its DB connection from
-environment variables injected via the `finance-config` ConfigMap and the
-`finance-secrets` Secret.
+namespace, ConfigMap, PostgreSQL StatefulSet/Service/PVC, a Redis Deployment/Service,
+the app Deployment/Service, and an Ingress (`finance-tracker.local`, nginx). The app
+reads its DB and Redis connection from environment variables injected via the
+`finance-config` ConfigMap and the `finance-secrets` Secret.
 
 ```bash
 # DB password (the Secret is not committed)
@@ -166,6 +177,7 @@ Key settings live in `src/main/resources/application.properties`:
 | Property | Description |
 |----------|-------------|
 | `spring.datasource.*` | PostgreSQL connection (env-driven, see below) |
+| `spring.data.redis.*` | Redis connection for the cache (env-driven, see below) |
 | `jwt.secret` | HMAC signing key (must be ≥ 256 bits for HS256) |
 | `jwt.expiration` | Access token lifetime, ms |
 | `jwt.refresh-expiration` | Refresh token lifetime, ms |
@@ -180,6 +192,8 @@ same build runs locally, in Docker, and in Kubernetes:
 | `DB_NAME` | `finance_tracker` | Database name |
 | `DB_USERNAME` | `postgres` | Database user |
 | `DB_PASSWORD` | — | Database password (set via the `finance-secrets` Secret in k8s) |
+| `REDIS_HOST` | `localhost` | Redis host |
+| `REDIS_PORT` | `6379` | Redis port |
 
 ## Running Tests
 
@@ -188,7 +202,7 @@ same build runs locally, in Docker, and in Kubernetes:
 ```
 
 The suite includes unit tests (MockK) and integration tests that spin up a real
-PostgreSQL via **Testcontainers**, so Docker must be running.
+PostgreSQL and Redis via **Testcontainers**, so Docker must be running.
 
 ## License
 MIT
