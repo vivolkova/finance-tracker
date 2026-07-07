@@ -22,7 +22,9 @@ import org.springframework.http.HttpStatusCode
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.testcontainers.containers.GenericContainer
 import org.testcontainers.postgresql.PostgreSQLContainer
+import org.testcontainers.utility.DockerImageName
 import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.test.assertEquals
@@ -63,6 +65,12 @@ abstract class IntegrationTestBase {
             start()
         }
 
+        @JvmStatic
+        val redis: GenericContainer<*> = GenericContainer(DockerImageName.parse("redis:7")).apply {
+            withExposedPorts(6379)
+            start()
+        }
+
         @DynamicPropertySource
         @JvmStatic
         fun configureProperties(registry: DynamicPropertyRegistry) {
@@ -71,6 +79,8 @@ abstract class IntegrationTestBase {
             registry.add("spring.datasource.password", postgres::getPassword)
             registry.add("spring.flyway.enabled") { "true" }
             registry.add("spring.jpa.hibernate.ddl-auto") { "validate" }
+            registry.add("spring.data.redis.host", redis::getHost)
+            registry.add("spring.data.redis.port") { redis.getMappedPort(6379) }
         }
     }
 
