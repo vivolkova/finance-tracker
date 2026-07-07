@@ -79,6 +79,7 @@ class TransactionService(
     @Cacheable(value = ["monthlySummary"], key = "#year + '-' + #month")
     @Transactional(readOnly = true)
     fun getMonthlySummary(year: Int, month: Int): MonthlySummary {
+        logger.info("SUMMARY MISS: computing $year-$month")
         val date = LocalDate.of(year, month, 1)
         val transactions = transactionRepository.findAllByMonth(date)
 
