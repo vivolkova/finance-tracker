@@ -4,6 +4,8 @@ import com.example.financetracker.category.CategoryRepository
 import com.example.financetracker.user.User
 import jakarta.persistence.OptimisticLockException
 import org.slf4j.LoggerFactory
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -44,6 +46,7 @@ class TransactionService(
             .orElseThrow { NoSuchElementException("Transaction not found with id: $id") }
             .toDto()
 
+    @CacheEvict(value = ["monthlySummary"], allEntries = true)
     @Transactional
     fun create(command: CreateTransactionCommand): TransactionDto {
         val category = categoryRepository.findById(command.categoryId)
@@ -63,6 +66,7 @@ class TransactionService(
         ).toDto()
     }
 
+    @CacheEvict(value = ["monthlySummary"], allEntries = true)
     @Transactional
     fun delete(id: Long) {
         logger.info("Deleting transaction with id: $id")
@@ -72,6 +76,7 @@ class TransactionService(
         logger.info("Transaction deleted successfully: $id")
     }
 
+    @Cacheable(value = ["monthlySummary"], key = "#year + '-' + #month")
     @Transactional(readOnly = true)
     fun getMonthlySummary(year: Int, month: Int): MonthlySummary {
         val date = LocalDate.of(year, month, 1)
@@ -104,6 +109,8 @@ class TransactionService(
             byCategory = byCategory
         )
     }
+
+    @CacheEvict(value = ["monthlySummary"], allEntries = true)
     @Transactional
     fun update(id: Long, command: UpdateTransactionCommand): TransactionDto {
         val transaction = transactionRepository.findById(id)
