@@ -7,5 +7,5 @@ data:
   DB_HOST: postgres
   DB_PORT: "5432"
   DB_NAME: finance_tracker
-  DB_USERNAME: postgres
+  DB_USERNAME: admin
   REDIS_HOST: redis

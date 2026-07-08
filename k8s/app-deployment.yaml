@@ -47,3 +47,4 @@ spec:
             periodSeconds: 10
             failureThreshold: 3
       automountServiceAccountToken: false
+      enableServiceLinks: false
