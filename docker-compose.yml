@@ -4,7 +4,7 @@ services:
     container_name: finance-tracker-db
     environment:
       POSTGRES_DB: finance_tracker
-      POSTGRES_USER: admin
+      POSTGRES_USER: vivolkova
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"

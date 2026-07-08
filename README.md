@@ -190,7 +190,7 @@ same build runs locally, in Docker, and in Kubernetes:
 | `DB_HOST` | `localhost` | PostgreSQL host |
 | `DB_PORT` | `5432` | PostgreSQL port |
 | `DB_NAME` | `finance_tracker` | Database name |
-| `DB_USERNAME` | `admin` | Database user |
+| `DB_USERNAME` | `vivolkova` | Database user |
 | `DB_PASSWORD` | — | Database password (set via the `finance-secrets` Secret in k8s) |
 | `REDIS_HOST` | `localhost` | Redis host |
 | `REDIS_PORT` | `6379` | Redis port |
