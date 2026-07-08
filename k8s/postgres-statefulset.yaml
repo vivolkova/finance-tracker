@@ -23,7 +23,10 @@ spec:
             - name: POSTGRES_DB
               value: finance_tracker
             - name: POSTGRES_USER
-              value: postgres
+              valueFrom:
+                configMapKeyRef:
+                  name: finance-config
+                  key: DB_USERNAME
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
