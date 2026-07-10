@@ -15,6 +15,8 @@ resources:
   - prometheus-config.yaml
   - prometheus-deployment.yaml
   - prometheus-service.yaml
+  - grafana-deployment.yaml
+  - grafana-service.yaml
 images:
   - name: ghcr.io/vivolkova/finance-tracker
     newTag: sha-123
