@@ -11,6 +11,7 @@ A pet project for learning backend development.
 - 📊 **Monthly summary** — totals, balance, and per-category breakdown
 - ⚡ **Redis caching** — monthly summary cached with a TTL and evicted on writes
 - 🔁 **Recurring transactions** — schedules that auto-create transactions on a cron job
+- 📈 **Metrics & monitoring** — Micrometer/Prometheus metrics scraped into Prometheus and visualized in Grafana
 - 📖 **OpenAPI / Swagger UI** — interactive API docs
 
 ## Tech Stack
@@ -21,7 +22,8 @@ A pet project for learning backend development.
 - **Spring Data JPA** + **Hibernate** — data access
 - **Flyway** — database migrations
 - **Spring Security** + **JWT (jjwt)** — authentication
-- **Spring Boot Actuator** — health, metrics, and cache endpoints
+- **Spring Boot Actuator** + **Micrometer** — health, metrics, cache, and Prometheus endpoints
+- **Prometheus** + **Grafana** — metrics scraping and dashboards (`k8s/`)
 - **Springdoc OpenAPI / Swagger UI** — API documentation
 - **MockK** + **JUnit 5** — testing
 - **Docker** — local infrastructure
@@ -114,6 +116,28 @@ stored as JSON (`GenericJacksonJsonRedisSerializer`). Every transaction
 create/update/delete evicts the whole `monthlySummary` cache, so totals never go
 stale. Caching is turned on with `@EnableCaching` and configured in `CacheConfig`.
 
+## Monitoring
+
+The app exposes operational endpoints through **Spring Boot Actuator** — `health`,
+`info`, `metrics`, `caches`, and `prometheus` are enabled (see
+`management.endpoints.web.exposure.include` in `application.properties`). **Micrometer**
+publishes application metrics in Prometheus format at `/actuator/prometheus`.
+
+In Kubernetes, **Prometheus** scrapes that endpoint every 15s (`prometheus-config.yaml`,
+job `finance-tracker`) and **Grafana** visualizes the metrics:
+
+| Component | In-cluster address |
+|-----------|--------------------|
+| Prometheus | `prometheus:9090` |
+| Grafana | `grafana:3000` |
+
+Reach them locally with a port-forward, e.g.:
+```bash
+kubectl port-forward -n finance-tracker svc/grafana 3000:3000
+kubectl port-forward -n finance-tracker svc/prometheus 9090:9090
+```
+Add Prometheus (`http://prometheus:9090`) as a data source in Grafana to build dashboards.
+
 ## API Documentation
 
 Full interactive API documentation available via Swagger UI:
@@ -141,8 +165,9 @@ Published images are available on GitHub Container Registry:
 
 Manifests live in `k8s/` and are bundled with **Kustomize** (`kustomization.yaml`):
 namespace, ConfigMap, PostgreSQL StatefulSet/Service/PVC, a Redis Deployment/Service,
-the app Deployment/Service, and an Ingress (`finance-tracker.local`, nginx). The app
-reads its DB and Redis connection from environment variables injected via the
+the app Deployment/Service, an Ingress (`finance-tracker.local`, nginx), and the
+monitoring stack (Prometheus Deployment/Service/config and Grafana Deployment/Service).
+The app reads its DB and Redis connection from environment variables injected via the
 `finance-config` ConfigMap and the `finance-secrets` Secret.
 
 ```bash
