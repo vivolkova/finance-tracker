@@ -12,6 +12,9 @@ resources:
   - ingress.yaml
   - redis-deployment.yaml
   - redis-service.yaml
+  - prometheus-config.yaml
+  - prometheus-deployment.yaml
+  - prometheus-service.yaml
 images:
   - name: ghcr.io/vivolkova/finance-tracker
     newTag: sha-123
