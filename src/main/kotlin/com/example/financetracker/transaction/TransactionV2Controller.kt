@@ -2,30 +2,32 @@ package com.example.financetracker.transaction
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
-import jakarta.validation.constraints.NotNull
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import java.math.BigDecimal
 import java.time.LocalDate
 
 @RestController
-@RequestMapping(value = ["/api/transactions", "/api/v1/transactions"])
-@Tag(name = "Transactions v1", description = "Transactions (v1, deprecated: type)")
-class TransactionController(
+@RequestMapping("/api/v2/transactions")
+@Tag(name = "Transactions v2", description = "Transactions (v2, без поля type)")
+class TransactionV2Controller(
     private val transactionService: TransactionService
 ) {
 
     @GetMapping
-    fun getAll(): List<TransactionDto> = transactionService.getAll()
+    fun getAll(): List<TransactionV2Dto> =
+        transactionService.getAll().map { it.toV2() }
 
     @GetMapping("/{id}")
-    fun getById(@PathVariable id: Long): TransactionDto = transactionService.getById(id)
+    fun getById(@PathVariable id: Long): TransactionV2Dto =
+        transactionService.getById(id).toV2()
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    fun create(@Valid @RequestBody request: CreateTransactionRequest): TransactionDto =
+    fun create(@Valid @RequestBody request: CreateTransactionV2Request): TransactionV2Dto =
         transactionService.create(
             CreateTransactionCommand(
                 amount = request.amount,
@@ -33,7 +35,7 @@ class TransactionController(
                 date = request.date,
                 categoryId = request.categoryId
             )
-        )
+        ).toV2()
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -50,8 +52,8 @@ class TransactionController(
     @PatchMapping("/{id}")
     fun update(
         @PathVariable id: Long,
-        @Valid @RequestBody request: UpdateTransactionRequest
-    ): TransactionDto =
+        @Valid @RequestBody request: UpdateTransactionV2Request
+    ): TransactionV2Dto =
         transactionService.update(
             id,
             UpdateTransactionCommand(
@@ -61,10 +63,10 @@ class TransactionController(
                 request.categoryId,
                 request.version
             )
-        )
+        ).toV2()
 }
 
-data class CreateTransactionRequest(
+data class CreateTransactionV2Request(
     @field:NotNull(message = "Amount cannot be null")
     @field:Positive(message = "Amount must be positive")
     val amount: BigDecimal,
@@ -74,9 +76,6 @@ data class CreateTransactionRequest(
 
     @field:NotNull(message = "Date cannot be null")
     val date: LocalDate,
-
-    @field:NotNull(message = "Type cannot be null")
-    val type: TransactionType,
 
     @field:NotNull(message = "Category id cannot be null")
     val categoryId: Long
