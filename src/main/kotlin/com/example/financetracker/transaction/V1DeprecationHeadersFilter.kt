@@ -16,7 +16,7 @@ class V1DeprecationHeadersFilter : OncePerRequestFilter() {
         val p = req.requestURI
         if (p.startsWith("/api/v1/transactions") || p.startsWith("/api/transactions")) {
             res.setHeader("Deprecation", "true")
-            res.setHeader("Sunset", "16.07.2027 00:00:00 GMT")
+            res.setHeader("Sunset", "Wed, 16 Jul 2027 00:00:00 GMT")
             res.setHeader("Link", "</api/v2/transactions>; rel=\"successor-version\"")
         }
         chain.doFilter(req, res)

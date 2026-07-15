@@ -22,7 +22,7 @@ class CategoryController(
     fun getAll(): List<CategoryDto> = categoryService.getAll()
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get transaction by Id")
+    @Operation(summary = "Get category by Id")
     @ApiResponse(responseCode = "200", description = "Category found")
     @ApiResponse(responseCode = "404", description = "Category not found")
 
