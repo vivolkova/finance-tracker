@@ -12,7 +12,11 @@ import java.time.LocalDate
 
 @RestController
 @RequestMapping(value = ["/api/transactions", "/api/v1/transactions"])
-@Tag(name = "Transactions v1", description = "Transactions (v1, deprecated: type)")
+@Tag(
+    name = "Transactions v1 (deprecated)",
+    description = "Use /api/v2/transactions. Transactions v1 will be removed in v2.0"
+)
+@Deprecated("Use /api/v2/transactions instead. Will be removed in v2.0")
 class TransactionController(
     private val transactionService: TransactionService
 ) {
