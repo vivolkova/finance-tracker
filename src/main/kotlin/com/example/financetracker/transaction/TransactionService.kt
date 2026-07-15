@@ -1,6 +1,7 @@
 package com.example.financetracker.transaction
 
 import com.example.financetracker.category.CategoryRepository
+import com.example.financetracker.category.CategoryType
 import com.example.financetracker.user.User
 import jakarta.persistence.OptimisticLockException
 import org.slf4j.LoggerFactory
@@ -16,7 +17,6 @@ data class CreateTransactionCommand(
     val amount: BigDecimal,
     val description: String? = null,
     val date: LocalDate,
-    val type: TransactionType,
     val categoryId: Long
 )
 
@@ -24,7 +24,6 @@ data class UpdateTransactionCommand(
     val amount: BigDecimal? = null,
     val description: String? = null,
     val date: LocalDate? = null,
-    val type: TransactionType? = null,
     val categoryId: Long? = null,
     val version: Long
 )
@@ -59,7 +58,7 @@ class TransactionService(
                 amount = command.amount,
                 description = command.description,
                 date = command.date,
-                type = command.type,
+                type = TransactionType.valueOf(category.type.name),
                 category = category,
                 user = currentUser
             )
@@ -84,11 +83,11 @@ class TransactionService(
         val transactions = transactionRepository.findAllByMonth(date)
 
         val totalIncome = transactions
-            .filter { it.type == TransactionType.INCOME }
+            .filter { it.category.type == CategoryType.INCOME }
             .fold(BigDecimal.ZERO) { acc, t -> acc + t.amount }
 
         val totalExpense = transactions
-            .filter { it.type == TransactionType.EXPENSE }
+            .filter { it.category.type == CategoryType.EXPENSE }
             .fold(BigDecimal.ZERO) { acc, t -> acc + t.amount }
 
         val byCategory = transactions
@@ -135,7 +134,7 @@ class TransactionService(
             amount = command.amount ?: transaction.amount,
             description = command.description ?: transaction.description,
             date = command.date ?: transaction.date,
-            type = command.type ?: transaction.type,
+            type = TransactionType.valueOf(category.type.name),
             category = category,
             user = transaction.user,
             createdAt = transaction.createdAt,

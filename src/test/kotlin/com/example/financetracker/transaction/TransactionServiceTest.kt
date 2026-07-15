@@ -82,7 +82,6 @@ class TransactionServiceTest {
             amount = BigDecimal("5000"),
             description = "Monthly salary",
             date = LocalDate.of(2026, 5, 27),
-            type = TransactionType.INCOME,
             categoryId = 1L
         )
 
@@ -102,7 +101,6 @@ class TransactionServiceTest {
             amount = BigDecimal("5000"),
             description = null,
             date = LocalDate.of(2026, 5, 27),
-            type = TransactionType.INCOME,
             categoryId = 99L
         )
 

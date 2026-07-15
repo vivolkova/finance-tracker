@@ -99,7 +99,6 @@ abstract class IntegrationTestBase {
         categoryName: String,
         categoryType: CategoryType,
         amount: BigDecimal,
-        transactionType: TransactionType,
         description: String? = "test transaction",
     ): Long {
         val (categoryResponse, _) = addCategory(categoryName, categoryType)
@@ -108,7 +107,7 @@ abstract class IntegrationTestBase {
             amount = amount,
             description = description,
             date = LocalDate.now(),
-            type = transactionType,
+            type = TransactionType.valueOf(categoryType.name),
             categoryId = categoryResponse.id
         )
 

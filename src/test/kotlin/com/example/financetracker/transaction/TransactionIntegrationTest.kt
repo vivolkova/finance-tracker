@@ -24,7 +24,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     fun `get by id`() {
         val amount = BigDecimal(150)
         val id = addTransaction(
-            "Groceries", CategoryType.EXPENSE, amount, TransactionType.EXPENSE
+            "Groceries", CategoryType.EXPENSE, amount
         )
 
         val result = restTemplate.exchange(
@@ -41,13 +41,11 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `get all`() {
         addTransaction(
-            "Groceries", CategoryType.EXPENSE, BigDecimal(150),
-            TransactionType.EXPENSE
+            "Groceries", CategoryType.EXPENSE, BigDecimal(150)
         )
 
         addTransaction(
-            "Salary", CategoryType.INCOME, BigDecimal(150),
-            TransactionType.INCOME
+            "Salary", CategoryType.INCOME, BigDecimal(150)
         )
 
         val result = restTemplate.exchange(
@@ -116,7 +114,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `delete by id`() {
         val id = addTransaction(
-            "Groceries", CategoryType.EXPENSE, BigDecimal(150), TransactionType.EXPENSE
+            "Groceries", CategoryType.EXPENSE, BigDecimal(150)
         )
         val result = restTemplate.exchange(
             "/api/transactions/{id}",
@@ -143,11 +141,11 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         val incomeAmount = BigDecimal(200)
         val expenseAmount = BigDecimal(150)
         addTransaction(
-            "Groceries", CategoryType.EXPENSE, expenseAmount, TransactionType.EXPENSE
+            "Groceries", CategoryType.EXPENSE, expenseAmount
         )
 
         addTransaction(
-            "Salary", CategoryType.INCOME, incomeAmount, TransactionType.INCOME
+            "Salary", CategoryType.INCOME, incomeAmount
         )
 
         val result = restTemplate.exchange(
@@ -166,7 +164,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `update transaction`(){
         val id = addTransaction(
-            "Groceries", CategoryType.EXPENSE, BigDecimal(150), TransactionType.EXPENSE
+            "Groceries", CategoryType.EXPENSE, BigDecimal(150)
         )
         val newAmount = BigDecimal(200)
         val transaction = restTemplate.exchange(
@@ -191,7 +189,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `patch, version conflict`(){
         val id = addTransaction(
-            "Groceries", CategoryType.EXPENSE, BigDecimal(150), TransactionType.EXPENSE
+            "Groceries", CategoryType.EXPENSE, BigDecimal(150)
         )
         val transaction = restTemplate.exchange(
             "/api/transactions/{id}",
