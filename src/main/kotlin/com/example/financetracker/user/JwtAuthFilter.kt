@@ -10,6 +10,13 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
 
+// object — синглтон одной строкой: один экземпляр на всё приложение.
+// Общие константы аутентификации в одном месте вместо «магических строк».
+object AuthHeaders {
+    const val HEADER = "Authorization"
+    const val PREFIX = "Bearer "
+}
+
 @Component
 class JwtAuthFilter(
     private val jwtService: JwtService,
@@ -21,21 +28,25 @@ class JwtAuthFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        val authHeader = request.getHeader("Authorization")
+        val authHeader = request.getHeader(AuthHeaders.HEADER)
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (authHeader == null || !authHeader.startsWith(AuthHeaders.PREFIX)) {
             filterChain.doFilter(request, response)
             return
         }
 
-        val token = authHeader.substring(7)
+        val token = authHeader.substring(AuthHeaders.PREFIX.length)
 
-        if (!jwtService.isTokenValid(token)) {
-            filterChain.doFilter(request, response)
-            return
+        // sealed + when: обрабатываем все варианты результата (компилятор проверяет полноту).
+        // Valid — берём email через smart cast; истёк/невалиден — пропускаем без аутентификации.
+        val email = when (val result = jwtService.validate(token)) {
+            is TokenValidation.Valid -> result.email
+            TokenValidation.Expired, TokenValidation.Invalid -> {
+                filterChain.doFilter(request, response)
+                return
+            }
         }
 
-        val email = jwtService.extractEmail(token)
         val user = userRepository.findByEmail(email).orElse(null) ?: run {
             filterChain.doFilter(request, response)
             return

@@ -24,7 +24,14 @@ import java.time.Instant
 @RestControllerAdvice
 class GlobalExceptionHandler {
 
-    private val logger = LoggerFactory.getLogger(GlobalExceptionHandler::class.java)
+    // companion object — объект, привязанный к классу (аналог static в Java).
+    // Логгер принадлежит классу, а не состоянию экземпляра. Этот класс — Spring-бин
+    // (синглтон), поэтому экземпляр и так один: здесь companion object — следование
+    // конвенции, а не экономия. Реальную выгоду даёт для часто создаваемых классов
+    // (сущности, DTO), где иначе плодились бы ссылки на логгер в каждом экземпляре.
+    companion object {
+        private val logger = LoggerFactory.getLogger(GlobalExceptionHandler::class.java)
+    }
 
     // ── Technique 1: build and return a ProblemDetail directly ────────────────
     // No @ResponseStatus needed — the status is carried inside the ProblemDetail.
