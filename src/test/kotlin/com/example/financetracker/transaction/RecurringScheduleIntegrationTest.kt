@@ -15,7 +15,7 @@ class RecurringScheduleIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `get by transaction id`() {
-        val transactionId = addTransaction("Groceries", CategoryType.EXPENSE, BigDecimal(100), TransactionType.EXPENSE)
+        val transactionId = addTransaction("Groceries", CategoryType.EXPENSE, BigDecimal(100))
         val scheduleId = createSchedule(transactionId, Frequency.DAILY)
 
         val result = restTemplate.exchange(
@@ -31,7 +31,7 @@ class RecurringScheduleIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `delete by TransactionId`() {
-        val transactionId = addTransaction("Groceries", CategoryType.EXPENSE, BigDecimal(100), TransactionType.EXPENSE)
+        val transactionId = addTransaction("Groceries", CategoryType.EXPENSE, BigDecimal(100))
         createSchedule(transactionId, Frequency.DAILY)
 
         val result = restTemplate.exchange(
@@ -46,7 +46,7 @@ class RecurringScheduleIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `create, no token`() {
-        val transactionId = addTransaction("Groceries", CategoryType.EXPENSE, BigDecimal(100), TransactionType.EXPENSE)
+        val transactionId = addTransaction("Groceries", CategoryType.EXPENSE, BigDecimal(100))
         val request = CreateScheduleRequest(Frequency.DAILY, null, LocalDate.now(), LocalDate.now().plusDays(30))
 
         val result = restTemplate.exchange(
