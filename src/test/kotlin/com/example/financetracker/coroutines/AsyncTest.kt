@@ -17,14 +17,8 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.time.Duration
-
 
 class AsyncTest {
-
-    private val SHORT = Duration.parse("100ms")
-    private val LONG = Duration.parse("5s")
-    private val TIMEOUT = Duration.parse("200ms")
 
     private suspend fun loadIncome(): Int {
         delay(SHORT); return 500
