@@ -71,7 +71,8 @@ class AsyncTest {
                 n * 10
             }
         }
-        deferred.awaitAll()
+        val results = deferred.awaitAll()
+        assertEquals(listOf(10, 20, 30, 40, 50), results)
         assertEquals(100, currentTime - start)
     }
 
@@ -84,7 +85,8 @@ class AsyncTest {
             withTimeoutOrNull(TIMEOUT) { slow.await() }
 
         assertNull(result)
-        if (result == null) slow.cancel()
+        if (result == null)
+            slow.cancel()
         assertTrue(slow.isCancelled)
     }
 

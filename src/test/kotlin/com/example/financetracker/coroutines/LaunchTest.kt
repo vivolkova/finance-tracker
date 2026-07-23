@@ -16,7 +16,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -103,7 +102,6 @@ class LaunchTest {
         assertTrue(stopped, "isActive checked")
     }
 
-    @OptIn(ExperimentalAtomicApi::class)
     @Test
     fun `launch exception goes to CoroutineExceptionHandler`() = runBlocking {
         var caught: Throwable? = null
