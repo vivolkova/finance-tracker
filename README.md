@@ -170,6 +170,15 @@ monitoring stack (Prometheus Deployment/Service/config and Grafana Deployment/Se
 The app reads its DB and Redis connection from environment variables injected via the
 `finance-config` ConfigMap and the `finance-secrets` Secret.
 
+The target cluster is a local **minikube**. Make sure it is running before applying
+manifests (or before triggering the CD deploy) — otherwise `kubectl` fails with
+`couldn't get current server API group list ... connection refused`:
+
+```bash
+minikube start
+kubectl config use-context minikube
+```
+
 ```bash
 # DB password (the Secret is not committed)
 kubectl create secret generic finance-secrets -n finance-tracker \
@@ -194,6 +203,11 @@ Two GitHub Actions workflows live in `.github/workflows/`:
   Docker image and pushes it to `ghcr.io/vivolkova/finance-tracker` (tagged with the
   long commit SHA and `latest`), then a self-hosted runner pins that tag in
   `k8s/kustomization.yaml`, runs `kubectl apply -k k8s/`, and waits for the rollout.
+
+  > The `deploy` job runs on a **self-hosted** runner and targets the local minikube
+  > cluster, so **minikube must be running** before the job starts. If it is stopped,
+  > `kubectl` cannot reach the API server and the job fails with a `connection refused`
+  > error — start it with `minikube start`.
 
 ## Configuration
 
