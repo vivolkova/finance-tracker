@@ -16,6 +16,10 @@ java {
     }
 }
 
+springBoot {
+    mainClass = "com.example.financetracker.MySpringBootApplicationKt"
+}
+
 repositories {
     mavenCentral()
 }
