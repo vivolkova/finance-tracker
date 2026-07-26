@@ -17,7 +17,8 @@ import java.util.concurrent.atomic.AtomicInteger
  * Запуск вручную через main().
  */
 
-private const val ITERATIONS = 10_00000
+private const val ITERATIONS = 1_000_000   // для счётчика (потерянные обновления)
+private const val LIST_WRITES = 100_000    // для гонки на коллекции
 
 fun main() = runBlocking {
 
@@ -32,32 +33,39 @@ fun main() = runBlocking {
     }
     println("1) unsafe counter (expected $ITERATIONS): $unsafe   <- usually less = lost updates")
 
-    // ── 2. ConcurrentModificationException: одновременная запись и перебор общей коллекции ──
+    // ── 2. Гонка на коллекции: перебор ВО ВРЕМЯ изменения ──
+    // Ключ к воспроизведению CME(ConcurrentModificationException.) — широкое окно: читатели перебирают список,
+    // ПОКА писатели его наполняют. Тогда перебор и add реально пересекаются во времени.
     val list = mutableListOf<Int>()          // НЕ потокобезопасный список
     val cme = AtomicInteger(0)
-    supervisorScope {                        // падение одной корутины не рушит остальные
-        repeat(ITERATIONS) { i ->
-            launch(Dispatchers.Default) {
-                try {
-                    list.add(i)
-                } catch (e: Exception) {
-                    // при параллельной записи ArrayList может повредиться
+    val other = AtomicInteger(0)
+    supervisorScope {
+        // писатели: параллельно добавляют (write-write гонка -> потери/повреждение)
+        val writers = launch {
+            repeat(LIST_WRITES) { i ->
+                launch(Dispatchers.Default) {
+                    try { list.add(i) } catch (e: Exception) { other.incrementAndGet() }
                 }
             }
         }
-        repeat(20000) {
+        // читатели: перебирают, ПОКА писатели активны (максимальное перекрытие во времени)
+        repeat(4) {
             launch(Dispatchers.Default) {
-                try {
-                    list.sum()               // перебор во время add
-                } catch (e: ConcurrentModificationException) {
-                    cme.incrementAndGet()
-                } catch (e: Exception) {
-                    // иные повреждения коллекции
+                while (writers.isActive) {
+                    try {
+                        list.sum()               // перебор
+                    } catch (e: ConcurrentModificationException) {
+                        cme.incrementAndGet()
+                    } catch (e: Exception) {
+                        other.incrementAndGet()  // ArrayIndexOutOfBounds и прочие повреждения
+                    }
                 }
             }
         }
+        writers.join()
     }
     println("2) ConcurrentModificationException caught: ${cme.get()} times")
-    println("2) size (expected $ITERATIONS): ${list.size}   <- can be less = loss/damage")
+    println("2) other corruption exceptions: ${other.get()} times")
+    println("2) size (expected $LIST_WRITES): ${list.size}   <- can be less = loss/damage")
 
 }
