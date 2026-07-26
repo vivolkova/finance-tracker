@@ -2,10 +2,10 @@ package com.example.financetracker.coroutines
 
 import kotlin.time.Duration
 
-
-    val SHORT = Duration.parse("100ms")
-    val TICK = Duration.parse("50ms")
-    val LONG = Duration.parse("5s")
-    val WAIT = Duration.parse("120ms")
-    val TIMEOUT = Duration.parse("200ms")
+    val delay1ms = Duration.parse("100ms")
+    val delay100ms = Duration.parse("100ms")
+    val delay50ms = Duration.parse("50ms")
+    val delay5s = Duration.parse("5s")
+    val delay120ms = Duration.parse("120ms")
+    val delay200ms = Duration.parse("200ms")
 

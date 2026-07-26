@@ -31,7 +31,7 @@ class LaunchTest {
     fun `launch returns immediately and completes after join`() = runTest {
         var done = false
         val job: Job = launch {
-            delay(SHORT)
+            delay(delay100ms)
             done = true
         }
 
@@ -54,11 +54,11 @@ class LaunchTest {
         val cancellable = launch {
             repeat(10) {
                 steps++
-                delay(TICK)
+                delay(delay50ms)
             }
         }
 
-        delay(WAIT)
+        delay(delay120ms)
         cancellable.cancel()
         cancellable.join()
 
@@ -76,8 +76,8 @@ class LaunchTest {
         var completed = 0
 
         coroutineScope {
-            launch { delay(TICK); completed++ }
-            launch { delay(TICK); completed++ }
+            launch { delay(delay50ms); completed++ }
+            launch { delay(delay50ms); completed++ }
         }
 
         assertEquals(2, completed, "both coroutines finished")
@@ -95,7 +95,7 @@ class LaunchTest {
             stopped = true
         }
 
-        delay(TICK)
+        delay(delay50ms)
         worker.cancelAndJoin()
 
         assertTrue(worker.isCancelled, "job cancelled")

@@ -21,11 +21,11 @@ import kotlin.test.assertTrue
 class AsyncTest {
 
     private suspend fun loadIncome(): Int {
-        delay(SHORT); return 500
+        delay(delay100ms); return 500
     }
 
     private suspend fun loadExpense(): Int {
-        delay(SHORT); return 300
+        delay(delay100ms); return 300
     }
 
     @Test
@@ -67,7 +67,7 @@ class AsyncTest {
         val start = currentTime
         val deferred: List<Deferred<Int>> = (1..5).map { n ->
             async {
-                delay(SHORT)
+                delay(delay100ms)
                 n * 10
             }
         }
@@ -79,10 +79,10 @@ class AsyncTest {
     @Test
     fun `async with timeout`() = runTest {
         val slow = async {
-            delay(LONG)
+            delay(delay5s)
         }
         val result =
-            withTimeoutOrNull(TIMEOUT) { slow.await() }
+            withTimeoutOrNull(delay200ms) { slow.await() }
 
         assertNull(result)
         if (result == null)
@@ -100,10 +100,10 @@ class AsyncTest {
         }
 
         advanceUntilIdle()
-        assertFalse(started, "lazy async не должен стартовать до await/start")
+        assertFalse(started, "lazy async should not start before await/start")
 
         val result = lazy.await()
-        assertTrue(started, "после await тело должно выполниться")
+        assertTrue(started, "after await the body must be executed")
         assertEquals(42, result)
     }
 
