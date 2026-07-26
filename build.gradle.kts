@@ -16,6 +16,10 @@ java {
     }
 }
 
+springBoot {
+    mainClass = "com.example.financetracker.MySpringBootApplicationKt"
+}
+
 repositories {
     mavenCentral()
 }
@@ -40,6 +44,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-cache")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("io.micrometer:micrometer-registry-prometheus")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
 
     runtimeOnly("io.jsonwebtoken:jjwt-impl:$jjwtVersion")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jjwtVersion")
@@ -57,7 +62,9 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("org.testcontainers:testcontainers-postgresql")
 
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+
     testImplementation("io.mockk:mockk:$mockkVersion")
     testImplementation("com.ninja-squad:springmockk:$springmockkVersion")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
