@@ -22,8 +22,10 @@ class RecurringTransactionSchedulerTest {
 
     private val scheduleRepository = mockk<RecurringScheduleRepository>()
     private val transactionRepository = mockk<TransactionRepository>()
+    private val processor =
+        RecurringScheduleProcessor(scheduleRepository, transactionRepository)
     private val scheduler =
-        RecurringTransactionScheduler(scheduleRepository, transactionRepository, clock)
+        RecurringTransactionScheduler(scheduleRepository, processor, clock)
 
     private val category = Category(id = 1L, name = "Rent", type = CategoryType.EXPENSE)
 
