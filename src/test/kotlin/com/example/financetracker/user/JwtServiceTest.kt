@@ -3,6 +3,8 @@ package com.example.financetracker.user
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.test.util.ReflectionTestUtils
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
 
 class JwtServiceTest {
 
@@ -55,5 +57,47 @@ class JwtServiceTest {
         assertThrows<Exception> {
             jwtService.extractEmail(foreignToken)
         }
+    }
+
+    // ── sealed-результат validate(): три ветки вместо true/false ──────────────
+    // validate() НЕ бросает исключение, а возвращает типизированную причину.
+    // Вызывающий (JwtAuthFilter) обязан разобрать все случаи через when.
+
+    @Test
+    fun `validate returns Valid with email for a fresh token`() {
+        val token = jwtService.generateToken("user@example.com")
+
+        val result = jwtService.validate(token)
+
+        assertIs<TokenValidation.Valid>(result)          // smart-cast к Valid ниже
+        assertEquals("user@example.com", result.email)
+    }
+
+    @Test
+    fun `validate returns Invalid for a malformed token`() {
+        val result = jwtService.validate("not-a-jwt")
+
+        assertIs<TokenValidation.Invalid>(result)
+    }
+
+    @Test
+    fun `validate returns Invalid for a token signed with another secret`() {
+        val otherService = JwtService("another-secret-key-that-is-also-256-bits-long!", 3_600_000L)
+        val foreignToken = otherService.generateToken("user@example.com")
+
+        val result = jwtService.validate(foreignToken)   // подпись не сходится
+
+        assertIs<TokenValidation.Invalid>(result)
+    }
+
+    @Test
+    fun `validate returns Expired for an already expired token`() {
+        // тот же секрет, но время жизни в ПРОШЛОМ -> подпись валидна, но exp истёк
+        val expiredService = JwtService("test-secret-key-that-is-long-enough-256bits!", -1_000L)
+        val token = expiredService.generateToken("user@example.com")
+
+        val result = jwtService.validate(token)
+
+        assertIs<TokenValidation.Expired>(result)
     }
 }
