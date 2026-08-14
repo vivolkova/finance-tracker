@@ -1,5 +1,6 @@
 package com.example.financetracker.common
 
+import com.example.financetracker.budget.DuplicateBudgetException
 import jakarta.persistence.OptimisticLockException
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
@@ -103,6 +104,11 @@ class GlobalExceptionHandler {
             .header("X-Error-Source", "global-handler")
             .body(detail)
     }
+
+    @ExceptionHandler(DuplicateBudgetException::class)
+    fun handlerDuplicateBudget(ex:DuplicateBudgetException): ProblemDetail =
+        problem(HttpStatus.CONFLICT, "Conflict", ex.message ?: "Duplicate budget")
+
 
     // ── Catch-all: log the real cause, hide details from the client ───────────
 

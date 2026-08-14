@@ -2,7 +2,8 @@ package com.example.financetracker.budget
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import jakarta.validation.constraints.Size
+import jakarta.validation.constraints.DecimalMin
+import jakarta.validation.constraints.Pattern
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -25,9 +26,10 @@ class BudgetController(
 }
 
 data class BudgetRequest(
+    @field:DecimalMin("0.01", "Limit amount must be positive")
     val limitAmount: BigDecimal,
     val categoryId: Long,
-    @field:Size(min = 7, max = 7, message = "Period must be at 7 characters")
+    @field:Pattern(regexp="\\d{4}-(0[1-9]|1[0-2])", message = "Period must be YYYY-MM")
     val period: String
 
 )

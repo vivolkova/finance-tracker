@@ -1,0 +1,1 @@
+ALTER TABLE budget RENAME TO budgets;
