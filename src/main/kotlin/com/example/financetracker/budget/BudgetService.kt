@@ -2,6 +2,8 @@ package com.example.financetracker.budget
 
 import com.example.financetracker.category.CategoryRepository
 import com.example.financetracker.user.User
+import org.hibernate.exception.ConstraintViolationException
+import org.slf4j.LoggerFactory
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
@@ -20,6 +22,7 @@ class BudgetService(
     private val budgetRepository: BudgetRepository,
     private val categoryRepository: CategoryRepository
 ) {
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Transactional
     fun create(budgetCommand: BudgetCommand): BudgetDto {
@@ -30,13 +33,13 @@ class BudgetService(
             ?: throw NoSuchElementException("User is not defined")
 
         if (budgetRepository.existsByUserIdAndCategoryIdAndPeriod(
-                currentUser.id,
-                budgetCommand.categoryId,
-                budgetCommand.period
+                currentUser.id, budgetCommand.categoryId, budgetCommand.period)) {
+            logger.debug(
+                "Duplicate budget rejected by pre-check: userId={}, categoryId={}, period={}",
+                currentUser.id, budgetCommand.categoryId, budgetCommand.period
             )
-        )
             throw DuplicateBudgetException("Budget already exists for this category and period")
-
+        }
 
         return try {
             budgetRepository.save(
@@ -48,7 +51,16 @@ class BudgetService(
                 )
             ).toDto()
         } catch (ex: DataIntegrityViolationException) {
-            throw DuplicateBudgetException("Budget already exists for this category and period")
+            val constraint = (ex.cause as? ConstraintViolationException)?.constraintName
+            if (constraint == "uq_budget_user_category_period") {
+                logger.warn("Duplicate budget on insert during race: constraint={}, userId={}, categoryId={}, period={}",
+                    constraint, currentUser.id, budgetCommand.categoryId, budgetCommand.period)
+                throw DuplicateBudgetException("Budget already exists for this category and period", ex)
+            }
+
+            logger.error("Data integrity violation: constraint={}, userId={}, categoryId={}, period={}",
+                constraint, currentUser.id, budgetCommand.categoryId, budgetCommand.period, ex)
+            throw ex
         }
     }
 }
