@@ -7,7 +7,6 @@ import jakarta.persistence.OptimisticLockException
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -47,11 +46,9 @@ class TransactionService(
 
     @CacheEvict(value = ["monthlySummary"], allEntries = true)
     @Transactional
-    fun create(command: CreateTransactionCommand): TransactionDto {
+    fun create(user: User, command: CreateTransactionCommand): TransactionDto {
         val category = categoryRepository.findById(command.categoryId)
             .orElseThrow { NoSuchElementException("Category not found with id: ${command.categoryId}") }
-
-        val currentUser = SecurityContextHolder.getContext().authentication?.principal as? User
 
         return transactionRepository.save(
             Transaction(
@@ -60,7 +57,7 @@ class TransactionService(
                 date = command.date,
                 type = TransactionType.valueOf(category.type.name),
                 category = category,
-                user = currentUser
+                user = user
             )
         ).toDto()
     }
