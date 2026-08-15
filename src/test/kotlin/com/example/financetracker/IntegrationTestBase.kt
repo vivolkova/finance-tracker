@@ -46,7 +46,7 @@ abstract class IntegrationTestBase {
     @BeforeEach
     fun registerUser() {
         val truncateStr =
-            "truncate table categories, transactions, users, refresh_tokens, recurring_schedules restart identity cascade"
+            "truncate table categories, transactions, users, refresh_tokens, recurring_schedules, budgets restart identity cascade"
         jdbcTemplate.execute(truncateStr)
 
         val user = RegisterRequest(email, password)

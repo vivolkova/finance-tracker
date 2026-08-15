@@ -1,11 +1,13 @@
 package com.example.financetracker.transaction
 
+import com.example.financetracker.user.User
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
 import jakarta.validation.constraints.NotNull
 import org.springframework.http.HttpStatus
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -29,8 +31,9 @@ class TransactionController(
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    fun create(@Valid @RequestBody request: CreateTransactionRequest): TransactionDto =
+    fun create(@AuthenticationPrincipal user: User, @Valid @RequestBody request: CreateTransactionRequest): TransactionDto =
         transactionService.create(
+            user,
             CreateTransactionCommand(
                 amount = request.amount,
                 description = request.description,
