@@ -45,7 +45,33 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      - run: |
+
+      - name: Ensure minikube is running
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $hostState = minikube status --format '{{.Host}}'
+          $apiState  = minikube status --format '{{.APIServer}}'
+          if ($LASTEXITCODE -ne 0 -or $hostState -ne 'Running' -or $apiState -ne 'Running') {
+            Write-Host "minikube is not ready (host: '$hostState', apiserver: '$apiState') - starting it"
+            minikube start
+            if ($LASTEXITCODE -ne 0) { throw "minikube start failed" }
+          } else {
+            Write-Host "minikube is already running"
+          }
+
+      - name: Verify cluster is reachable
+        run: |
+          $ErrorActionPreference = 'Continue'
+          kubectl --context minikube cluster-info
+          if ($LASTEXITCODE -ne 0) { throw "cluster is not reachable - check kubeconfig of the runner account" }
+
+      - name: Set image tag
+        run: |
           (Get-Content k8s/kustomization.yaml) -replace 'newTag:.*', 'newTag: sha-${{ github.sha }}' | Set-Content k8s/kustomization.yaml
-          kubectl apply -k k8s/
-          kubectl rollout status deployment/finance-tracker -n finance-tracker --timeout=120s
+          Get-Content k8s/kustomization.yaml | Select-String 'newTag'
+
+      - name: Apply manifests
+        run: kubectl --context minikube apply -k k8s/
+
+      - name: Wait for rollout
+        run: kubectl --context minikube rollout status deployment/finance-tracker -n finance-tracker --timeout=120s
