@@ -25,7 +25,7 @@ class CategoryIntegrationTest : IntegrationTestBase() {
             HttpEntity<Void>( headers),
             ProblemDetail::class.java
         )
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.statusCode)
+        assertEquals(HttpStatus.BAD_REQUEST, result.statusCode)
     }
 
     @Test

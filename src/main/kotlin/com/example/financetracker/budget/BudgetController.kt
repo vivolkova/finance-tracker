@@ -32,7 +32,7 @@ class BudgetController(
 
 data class BudgetRequest(
     @field:DecimalMin("0.01", "Limit amount must be positive")
-    @Digits(integer=17, fraction=2)
+    @field:Digits(integer=17, fraction=2, message = "LimitAmount scale must be less or equal 2")
     val limitAmount: BigDecimal,
     val categoryId: Long,
     @field:Pattern(regexp="\\d{4}-(0[1-9]|1[0-2])", message = "Period must be YYYY-MM")
