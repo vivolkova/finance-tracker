@@ -1,6 +1,7 @@
 package com.example.financetracker.budget
 
 import com.example.financetracker.category.CategoryRepository
+import com.example.financetracker.category.toDto
 import com.example.financetracker.user.User
 import org.hibernate.exception.ConstraintViolationException
 import org.slf4j.LoggerFactory
@@ -58,5 +59,14 @@ class BudgetService(
                 constraint, user.id, budgetCommand.categoryId, budgetCommand.period, ex)
             throw ex
         }
+    }
+
+    @Transactional(readOnly = true)
+    fun get(userId: Long, period: String? = null): List<BudgetDto>{
+        return if (period != null)
+            budgetRepository.findByUserIdAndPeriodOrderByPeriodDesc(userId, period).map { it.toDto() }
+        else
+           budgetRepository.findByUserIdOrderByPeriodDesc(userId).map { it.toDto() }
+
     }
 }
