@@ -75,7 +75,7 @@ class BudgetServiceTest {
             )
         } returns true
 
-        assertThrows<DuplicateBudgetException> {  budgetService.create(user, command) }
+        assertThrows<DuplicateBudgetException> { budgetService.create(user, command) }
         verify(exactly = 0) { budgetRepository.save(any()) }
     }
 
@@ -148,4 +148,57 @@ class BudgetServiceTest {
         assertEquals(command.limit.setScale(2), slot.captured.limitAmount)
         assertEquals(2, slot.captured.limitAmount.scale())
     }
+
+    @Test
+    fun `get by user`() {
+        val category = Category(id = 1, name = "Food", type = CategoryType.EXPENSE)
+        val budget = listOf(
+            Budget(
+                id = 1L,
+                category = category,
+                user = user,
+                limitAmount = BigDecimal(1000),
+                period = "2026-09"
+            ),
+            Budget(
+                id = 2L,
+                category = category,
+                user = user,
+                limitAmount = BigDecimal(1500),
+                period = "2026-10"
+            )
+        )
+        every{ budgetRepository.findByUserIdOrderByPeriodDesc(user.id)} returns budget
+        val result = budgetService.get(user.id)
+        assertEquals(2, result.size)
+        verify(exactly = 1) { budgetRepository.findByUserIdOrderByPeriodDesc(1L) }
+        verify(exactly = 0) { budgetRepository.findByUserIdAndPeriodOrderByPeriodDesc(any(), any()) }
+    }
+
+    @Test
+    fun `get by user and period`() {
+        val category = Category(id = 1, name = "Food", type = CategoryType.EXPENSE)
+        val budget = listOf(
+            Budget(
+                id = 1L,
+                category = category,
+                user = user,
+                limitAmount = BigDecimal(1000),
+                period = "2026-09"
+            )
+        )
+        every{ budgetRepository.findByUserIdAndPeriodOrderByPeriodDesc(user.id, "2026-09")} returns budget
+        val result = budgetService.get(user.id, "2026-09")
+        assertEquals(1, result.size)
+        verify(exactly = 1) { budgetRepository.findByUserIdAndPeriodOrderByPeriodDesc(1L, "2026-09") }
+        verify(exactly = 0) { budgetRepository.findByUserIdOrderByPeriodDesc(any()) }
+    }
+
+    @Test
+    fun `get by wrong userId`(){
+        every{ budgetRepository.findByUserIdOrderByPeriodDesc(123L)} returns emptyList()
+        val result = budgetService.get(123L)
+        assertEquals(emptyList(), result)
+    }
+
 }

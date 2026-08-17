@@ -220,5 +220,82 @@ class BudgetIntegrationTest : IntegrationTestBase() {
         assertEquals("Malformed or missing request body", result.body?.detail)
     }
 
+    @Test
+    fun `get budgets by userId and period`() {
+        addBudgets()
+
+        val result = restTemplate.exchange(
+            "/api/budgets?period={period}",
+            HttpMethod.GET,
+            HttpEntity<Void>( headers),
+            Array<BudgetDto>::class.java,
+            mapOf("period" to "2027-01")
+        )
+
+        assertEquals(HttpStatus.OK, result.statusCode)
+        assertEquals(1, result.body?.size)
+        assertEquals("2027-01", result.body?.get(0)?.period)
+    }
+
+    @Test
+    fun `get budgets by userId with no token`() {
+        val result = restTemplate.exchange(
+            "/api/budgets",
+            HttpMethod.GET,
+            HttpEntity.EMPTY,
+            Array<BudgetDto>::class.java)
+
+        assertEquals(HttpStatus.UNAUTHORIZED, result.statusCode)
+    }
+
+    @Test
+    fun `get no budgets by userId and period`() {
+        val result = restTemplate.exchange(
+            "/api/budgets?period={period}",
+            HttpMethod.GET,
+            HttpEntity<Void>( headers),
+            Array<BudgetDto>::class.java,
+            mapOf("period" to "2028-01")
+        )
+
+        assertEquals(HttpStatus.OK, result.statusCode)
+        assertEquals(0, result.body?.size)
+    }
+
+    @Test
+    fun `get budgets by userId`() {
+        addBudgets()
+
+        val result = restTemplate.exchange(
+            "/api/budgets",
+            HttpMethod.GET,
+            HttpEntity<Void>( headers),
+            Array<BudgetDto>::class.java
+        )
+
+        assertEquals(HttpStatus.OK, result.statusCode)
+        assertEquals(2, result.body?.size)
+        assertEquals("2027-02", result.body?.get(0)?.period)
+        assertEquals("2027-01", result.body?.get(1)?.period)
+    }
+
+    @Test
+    fun `get budgets isolates users`() {
+        addBudgets()
+        val headers2 = registerUser("test2@mail.ru", "12345")
+        val result = restTemplate.exchange(
+            "/api/budgets", HttpMethod.GET, HttpEntity<Void>(headers2), Array<BudgetDto>::class.java)
+        assertEquals(HttpStatus.OK, result.statusCode)
+        assertEquals(0, result.body?.size)               // чужого не видно
+    }
+
+    @Test
+    fun `get budgets invalid period`() {
+        val result = restTemplate.exchange(
+            "/api/budgets?period={period}", HttpMethod.GET,
+            HttpEntity<Void>(headers), ProblemDetail::class.java, mapOf("period" to "2027-13"))
+        assertEquals(HttpStatus.BAD_REQUEST, result.statusCode)
+        assertEquals("Period must be YYYY-MM", result.body?.detail)
+    }
 
 }

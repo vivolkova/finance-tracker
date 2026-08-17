@@ -1,6 +1,8 @@
 package com.example.financetracker
 
 
+import com.example.financetracker.budget.BudgetDto
+import com.example.financetracker.budget.BudgetRequest
 import com.example.financetracker.category.CategoryDto
 import com.example.financetracker.category.CategoryType
 import com.example.financetracker.category.CreateCategoryRequest
@@ -20,6 +22,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatusCode
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.GenericContainer
@@ -31,6 +34,7 @@ import kotlin.test.assertEquals
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestRestTemplate
+@ActiveProfiles("test")
 abstract class IntegrationTestBase {
 
     @Autowired
@@ -120,6 +124,29 @@ abstract class IntegrationTestBase {
 
         assertEquals(HttpStatus.CREATED, result.statusCode)
         return result.body!!.id
+    }
+
+    fun addBudgets(){
+        val category = addCategory("Food", CategoryType.EXPENSE)
+        val request1 = BudgetRequest(
+            limitAmount = BigDecimal("10000"),
+            categoryId = category.first.id,
+            period = "2027-01"
+        )
+
+        val result1 =
+            restTemplate.exchange("/api/budgets", HttpMethod.POST, HttpEntity(request1, headers), BudgetDto::class.java)
+        assertEquals(HttpStatus.CREATED, result1.statusCode)
+
+        val request2 = BudgetRequest(
+            limitAmount = BigDecimal("15000"),
+            categoryId = category.first.id,
+            period = "2027-02"
+        )
+
+        val result2 =
+            restTemplate.exchange("/api/budgets", HttpMethod.POST, HttpEntity(request2, headers), BudgetDto::class.java)
+        assertEquals(HttpStatus.CREATED, result2.statusCode)
     }
 
 }
