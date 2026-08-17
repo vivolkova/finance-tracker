@@ -3,6 +3,7 @@ package com.example.financetracker.transaction
 import com.example.financetracker.category.Category
 import com.example.financetracker.category.CategoryRepository
 import com.example.financetracker.category.CategoryType
+import com.example.financetracker.user.User
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -24,6 +25,8 @@ class TransactionServiceTest {
         name = "Salary",
         type = CategoryType.INCOME
     )
+
+    private  val user = User(id = 1L, email = "user@mail.ru", password = "password")
 
     // Recreated before each test — prevents shared mutable state via var version.
     private lateinit var transaction: Transaction
@@ -85,7 +88,7 @@ class TransactionServiceTest {
             categoryId = 1L
         )
 
-        val result = transactionService.create(command)
+        val result = transactionService.create(user, command)
 
         assert(result.amount == BigDecimal("5000"))
         assert(result.categoryName == "Salary")
@@ -105,7 +108,7 @@ class TransactionServiceTest {
         )
 
         assertThrows<NoSuchElementException> {
-            transactionService.create(command)
+            transactionService.create(user,command)
         }
         verify(exactly = 0) { transactionRepository.save(any()) }
     }

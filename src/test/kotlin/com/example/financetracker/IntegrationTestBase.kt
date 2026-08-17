@@ -43,17 +43,19 @@ abstract class IntegrationTestBase {
     val password = "1234"
     lateinit var headers: HttpHeaders
 
-    @BeforeEach
-    fun registerUser() {
-        val truncateStr =
-            "truncate table categories, transactions, users, refresh_tokens, recurring_schedules restart identity cascade"
-        jdbcTemplate.execute(truncateStr)
 
+    fun registerUser(email: String, password: String): HttpHeaders{
         val user = RegisterRequest(email, password)
         val token = restTemplate.postForEntity("/api/auth/register", user, AuthResponse::class.java).body?.accessToken!!
-        headers = HttpHeaders().apply {
-            setBearerAuth(token)
-        }
+        return HttpHeaders().apply { setBearerAuth(token) }
+    }
+
+    @BeforeEach
+    fun setUp() {
+        val truncateStr =
+            "truncate table categories, transactions, users, refresh_tokens, recurring_schedules, budgets restart identity cascade"
+        jdbcTemplate.execute(truncateStr)
+        headers = registerUser(email, password)
     }
 
     companion object {
