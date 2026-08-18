@@ -16,4 +16,6 @@ interface TransactionRepository : JpaRepository<Transaction, Long> {
               FUNCTION('DATE_TRUNC', 'month', CAST(:date AS date))
     """)
     fun findAllByMonth(@Param("date") date: LocalDate): List<Transaction>
+
+
 }

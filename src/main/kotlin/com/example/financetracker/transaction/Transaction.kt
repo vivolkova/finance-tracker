@@ -1,6 +1,7 @@
 package com.example.financetracker.transaction
 
 import com.example.financetracker.category.Category
+import com.example.financetracker.common.BaseEntity
 import com.example.financetracker.user.User
 import jakarta.persistence.*
 import java.math.BigDecimal
@@ -10,11 +11,6 @@ import java.time.LocalDateTime
 @Entity
 @Table(name = "transactions")
 class Transaction(
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0,
-
     @Column(nullable = false)
     val amount: BigDecimal,
 
@@ -42,18 +38,11 @@ class Transaction(
 
     @Version
     var version: Long = 0,
-) {
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is Transaction) return false
-        return id != 0L && id == other.id
-    }
-
-    override fun hashCode(): Int = javaClass.hashCode()
-
+    id: Long = 0
+): BaseEntity(id) {
     override fun toString(): String =
-        "Transaction(id=$id, amount=$amount, date=$date, type=$type)"
+        "Transaction(id=$id, amount=$amount, date=$date)"
 }
 
 enum class TransactionType {
