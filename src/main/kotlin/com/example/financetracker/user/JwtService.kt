@@ -14,8 +14,7 @@ class JwtService(
     @Value("\${jwt.expiration}") private val expiration: Long
 ) {
 
-    // Computed once on first use: by this point Spring has injected `secret`.
-    private val key: SecretKey by lazy { Keys.hmacShaKeyFor(secret.toByteArray()) }
+    private val key: SecretKey = Keys.hmacShaKeyFor(secret.toByteArray())
 
     /* Token:
      * Header(algorithm HS256).
@@ -55,7 +54,6 @@ class JwtService(
         TokenValidation.Invalid
     }
 
-    // Старый метод сохранён и теперь выражен через validate() — обратная совместимость.
     fun isTokenValid(token: String): Boolean = validate(token) is TokenValidation.Valid
 }
 
