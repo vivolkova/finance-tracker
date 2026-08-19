@@ -1,6 +1,7 @@
 package com.example.financetracker.common
 
 import com.example.financetracker.budget.DuplicateBudgetException
+import com.example.financetracker.transaction.LimitExceeded
 import jakarta.persistence.OptimisticLockException
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
@@ -113,6 +114,11 @@ class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException::class)
     fun handleUnreadable(ex: HttpMessageNotReadableException): ProblemDetail =
         problem(HttpStatus.BAD_REQUEST, "Bad Request", "Malformed or missing request body")
+
+    @ExceptionHandler(LimitExceeded::class)
+    fun handlerLimitExceeded(ex: LimitExceeded): ProblemDetail =
+        problem(HttpStatus.UNPROCESSABLE_CONTENT, "Limit Exceeded", ex.message ?: "Transaction Limit Exceeded")
+
 
     // ── Catch-all: log the real cause, hide details from the client ───────────
 

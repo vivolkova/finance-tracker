@@ -222,7 +222,8 @@ class BudgetIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `get budgets by userId and period`() {
-        addBudgets()
+        val categoryId = addCategory("Food", CategoryType.EXPENSE).first.id
+        addBudget(categoryId, BigDecimal(1000), "2027-01")
 
         val result = restTemplate.exchange(
             "/api/budgets?period={period}",
@@ -264,7 +265,9 @@ class BudgetIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `get budgets by userId`() {
-        addBudgets()
+        val categoryId = addCategory("Food", CategoryType.EXPENSE).first.id
+        addBudget(categoryId, BigDecimal(1000), "2027-01")
+        addBudget(categoryId, BigDecimal(1000), "2027-02")
 
         val result = restTemplate.exchange(
             "/api/budgets",
@@ -281,7 +284,9 @@ class BudgetIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `get budgets isolates users`() {
-        addBudgets()
+        val categoryId = addCategory("Food", CategoryType.EXPENSE).first.id
+        addBudget(categoryId, BigDecimal(1000), "2027-01")
+
         val headers2 = registerUser("test2@mail.ru", "12345")
         val result = restTemplate.exchange(
             "/api/budgets", HttpMethod.GET, HttpEntity<Void>(headers2), Array<BudgetDto>::class.java)

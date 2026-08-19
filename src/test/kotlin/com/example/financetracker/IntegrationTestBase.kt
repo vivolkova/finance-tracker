@@ -8,7 +8,6 @@ import com.example.financetracker.category.CategoryType
 import com.example.financetracker.category.CreateCategoryRequest
 import com.example.financetracker.transaction.CreateTransactionRequest
 import com.example.financetracker.transaction.TransactionDto
-import com.example.financetracker.transaction.TransactionType
 import com.example.financetracker.user.AuthResponse
 import com.example.financetracker.user.RegisterRequest
 import org.junit.jupiter.api.BeforeEach
@@ -48,7 +47,7 @@ abstract class IntegrationTestBase {
     lateinit var headers: HttpHeaders
 
 
-    fun registerUser(email: String, password: String): HttpHeaders{
+    fun registerUser(email: String, password: String): HttpHeaders {
         val user = RegisterRequest(email, password)
         val token = restTemplate.postForEntity("/api/auth/register", user, AuthResponse::class.java).body?.accessToken!!
         return HttpHeaders().apply { setBearerAuth(token) }
@@ -90,9 +89,9 @@ abstract class IntegrationTestBase {
         }
     }
 
-    fun addCategory(name: String, type: CategoryType): Pair<CategoryDto, HttpStatusCode>{
+    fun addCategory(name: String, type: CategoryType): Pair<CategoryDto, HttpStatusCode> {
         val createRequest = CreateCategoryRequest(name, type)
-        val result =  restTemplate.exchange(
+        val result = restTemplate.exchange(
             "/api/categories",
             HttpMethod.POST,
             HttpEntity(createRequest, headers),
@@ -102,19 +101,16 @@ abstract class IntegrationTestBase {
     }
 
     fun addTransaction(
-        categoryName: String,
-        categoryType: CategoryType,
+        categoryId: Long,
         amount: BigDecimal,
         description: String? = "test transaction",
+        date: LocalDate? = null
     ): Long {
-        val (categoryResponse, _) = addCategory(categoryName, categoryType)
-
         val request = CreateTransactionRequest(
             amount = amount,
             description = description,
-            date = LocalDate.now(),
-            type = TransactionType.valueOf(categoryType.name),
-            categoryId = categoryResponse.id
+            date = date ?: LocalDate.now(),
+            categoryId = categoryId
         )
 
         val result = restTemplate.exchange(
@@ -126,27 +122,26 @@ abstract class IntegrationTestBase {
         return result.body!!.id
     }
 
-    fun addBudgets(){
-        val category = addCategory("Food", CategoryType.EXPENSE)
-        val request1 = BudgetRequest(
-            limitAmount = BigDecimal("10000"),
-            categoryId = category.first.id,
-            period = "2027-01"
+    fun addTransactionWithCategory(
+        categoryName: String, categoryType: CategoryType,
+        amount: BigDecimal, transDescription: String? = null, transDate: LocalDate? = null
+    ): Long {
+        val categoryId = addCategory(categoryName, categoryType).first.id
+        val transId = addTransaction(categoryId, amount, transDescription, transDate)
+        return transId
+    }
+
+    fun addBudget(categoryId: Long, limitAmount: BigDecimal, period: String) {
+        val budget = BudgetRequest(
+            limitAmount = limitAmount,
+            categoryId = categoryId,
+            period = period
         )
 
-        val result1 =
-            restTemplate.exchange("/api/budgets", HttpMethod.POST, HttpEntity(request1, headers), BudgetDto::class.java)
-        assertEquals(HttpStatus.CREATED, result1.statusCode)
+        val result =
+            restTemplate.exchange("/api/budgets", HttpMethod.POST, HttpEntity(budget, headers), BudgetDto::class.java)
+        assertEquals(HttpStatus.CREATED, result.statusCode)
 
-        val request2 = BudgetRequest(
-            limitAmount = BigDecimal("15000"),
-            categoryId = category.first.id,
-            period = "2027-02"
-        )
-
-        val result2 =
-            restTemplate.exchange("/api/budgets", HttpMethod.POST, HttpEntity(request2, headers), BudgetDto::class.java)
-        assertEquals(HttpStatus.CREATED, result2.statusCode)
     }
 
 }

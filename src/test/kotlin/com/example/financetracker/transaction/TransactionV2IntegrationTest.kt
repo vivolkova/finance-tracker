@@ -40,8 +40,8 @@ class TransactionV2IntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `summary via v2`() {
-        addTransaction("Salary", CategoryType.INCOME, BigDecimal(200))
-        addTransaction("Groceries", CategoryType.EXPENSE, BigDecimal(150))
+        addTransactionWithCategory("Salary", CategoryType.INCOME, BigDecimal(200))
+        addTransactionWithCategory("Groceries", CategoryType.EXPENSE, BigDecimal(150))
 
         val result = restTemplate.exchange(
             "/api/v2/transactions/summary?year={y}&month={m}", HttpMethod.GET,

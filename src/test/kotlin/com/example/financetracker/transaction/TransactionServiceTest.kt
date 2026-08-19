@@ -1,5 +1,6 @@
 package com.example.financetracker.transaction
 
+import com.example.financetracker.budget.BudgetRepository
 import com.example.financetracker.category.Category
 import com.example.financetracker.category.CategoryRepository
 import com.example.financetracker.category.CategoryType
@@ -18,7 +19,8 @@ class TransactionServiceTest {
 
     private val transactionRepository = mockk<TransactionRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
-    private val transactionService = TransactionService(transactionRepository, categoryRepository)
+    private val budgetRepository = mockk<BudgetRepository>()
+    private val transactionService = TransactionService(transactionRepository, categoryRepository, budgetRepository)
 
     private val category = Category(
         id = 1L,
@@ -80,7 +82,7 @@ class TransactionServiceTest {
     fun `create should save and return TransactionDto`() {
         every { categoryRepository.findById(1L) } returns Optional.of(category)
         every { transactionRepository.save(any()) } returns transaction
-
+        every {budgetRepository.findByUserIdAndPeriodAndCategoryId(any(), any(), any()) } returns null
         val command = CreateTransactionCommand(
             amount = BigDecimal("5000"),
             description = "Monthly salary",
