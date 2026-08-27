@@ -1,6 +1,7 @@
 package com.example.financetracker.budget
 
 import jakarta.persistence.LockModeType
+import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Lock
@@ -17,6 +18,7 @@ interface BudgetRepository : JpaRepository<Budget, Long>,
         period: String
     ): Boolean
 
+    @EntityGraph(attributePaths = ["category", "user"])
     fun findByUserIdOrderByPeriodDesc(
         userId: Long
     ): List<Budget>
@@ -25,12 +27,6 @@ interface BudgetRepository : JpaRepository<Budget, Long>,
         userId: Long,
         period: String
     ): List<Budget>
-
-    fun findByUserIdAndPeriodAndCategoryId(
-        userId: Long,
-        period: String,
-        categoryId: Long
-    ): Budget?
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""

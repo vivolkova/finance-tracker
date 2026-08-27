@@ -82,7 +82,7 @@ class TransactionServiceTest {
     fun `create should save and return TransactionDto`() {
         every { categoryRepository.findById(1L) } returns Optional.of(category)
         every { transactionRepository.save(any()) } returns transaction
-        every {budgetRepository.findByUserIdAndPeriodAndCategoryId(any(), any(), any()) } returns null
+        every { budgetRepository.findForUpdate(any(), any(), any()) } returns null
         val command = CreateTransactionCommand(
             amount = BigDecimal("5000"),
             description = "Monthly salary",
