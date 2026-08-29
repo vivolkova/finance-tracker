@@ -1,6 +1,6 @@
 package com.example.financetracker.transaction
 
-import org.slf4j.LoggerFactory
+import com.example.financetracker.common.loggerFor
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -24,7 +24,7 @@ class RecurringScheduleProcessor(
     private val scheduleRepository: RecurringScheduleRepository,
     private val transactionRepository: TransactionRepository
 ) {
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    private val logger = loggerFor<RecurringScheduleProcessor>()
 
     @Transactional
     fun deactivateExpired(today: LocalDate): Int =

@@ -4,7 +4,6 @@ import com.example.financetracker.budget.DuplicateBudgetException
 import com.example.financetracker.transaction.LimitExceeded
 import jakarta.persistence.OptimisticLockException
 import jakarta.servlet.http.HttpServletRequest
-import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.http.ResponseEntity
@@ -33,7 +32,7 @@ class GlobalExceptionHandler {
     // конвенции, а не экономия. Реальную выгоду даёт для часто создаваемых классов
     // (сущности, DTO), где иначе плодились бы ссылки на логгер в каждом экземпляре.
     companion object {
-        private val logger = LoggerFactory.getLogger(GlobalExceptionHandler::class.java)
+        private val logger = loggerFor<GlobalExceptionHandler>()
     }
 
     // ── Technique 1: build and return a ProblemDetail directly ────────────────

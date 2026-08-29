@@ -6,7 +6,7 @@ import com.example.financetracker.category.CategoryRepository
 import com.example.financetracker.category.CategoryType
 import com.example.financetracker.user.User
 import jakarta.persistence.OptimisticLockException
-import org.slf4j.LoggerFactory
+import com.example.financetracker.common.loggerFor
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
@@ -36,7 +36,7 @@ class TransactionService(
     private val categoryRepository: CategoryRepository,
     private val budgetRepository: BudgetRepository,
 ) {
-    private val logger = LoggerFactory.getLogger(TransactionService::class.java)
+    private val logger = loggerFor<TransactionService>()
 
     @Transactional(readOnly = true)
     fun getAll(): List<TransactionDto> =
