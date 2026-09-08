@@ -1,5 +1,7 @@
 package com.example.financetracker.exchange
 
+import CurrencyNotFoundException
+import ExternalRateException
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
@@ -32,7 +34,3 @@ class ExchangeRateService(
     }
 }
 
-    class CurrencyNotFoundException(currency: String) :
-        RuntimeException("Курс для валюты '$currency' не найден")
-
-    class ExternalRateException(message: String) : RuntimeException(message)

@@ -12,7 +12,8 @@ import reactor.core.publisher.Mono
 @RequestMapping("/api/rates")
 @Tag(name = "Exchange rates", description = "Курсы валют через внешний API")
 class ExchangeRateController(
-    private val exchangeRateService: ExchangeRateService
+    private val exchangeRateService: ExchangeRateService,
+    private val restClientService: ExchangeRateRestClientService
 ) {
 
     @GetMapping
@@ -21,4 +22,11 @@ class ExchangeRateController(
         @RequestParam from: String,
         @RequestParam to: String
     ): Mono<RateResult> = exchangeRateService.getRate(from, to)
+
+    @GetMapping("/blocking")
+    @Operation(summary = "Курс через RestClient (блокирующий)")
+    fun getRateBlocking(
+        @RequestParam from: String,
+        @RequestParam to: String
+    ): RateResult = restClientService.getRate(from, to)
 }
