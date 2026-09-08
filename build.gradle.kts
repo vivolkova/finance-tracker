@@ -45,6 +45,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
 
     runtimeOnly("io.jsonwebtoken:jjwt-impl:$jjwtVersion")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jjwtVersion")
