@@ -1,6 +1,8 @@
 package com.example.financetracker.common
 
 import com.example.financetracker.budget.DuplicateBudgetException
+import com.example.financetracker.exchange.CurrencyNotFoundException
+import com.example.financetracker.exchange.ExternalRateException
 import com.example.financetracker.transaction.LimitExceeded
 import jakarta.persistence.OptimisticLockException
 import jakarta.servlet.http.HttpServletRequest
@@ -118,6 +120,13 @@ class GlobalExceptionHandler {
     fun handlerLimitExceeded(ex: LimitExceeded): ProblemDetail =
         problem(HttpStatus.UNPROCESSABLE_CONTENT, "Limit Exceeded", ex.message ?: "Transaction Limit Exceeded")
 
+    @ExceptionHandler(CurrencyNotFoundException::class)
+    fun handlerCurrencyNotFoundException(ex: CurrencyNotFoundException): ProblemDetail =
+        problem(HttpStatus.NOT_FOUND, "Exchange rate", ex.message ?: "Exchange rate not found")
+
+    @ExceptionHandler(ExternalRateException::class)
+    fun handlerExternalRateException(ex: ExternalRateException): ProblemDetail =
+        problem(HttpStatus.BAD_GATEWAY, "External service", ex.message ?: "No answer from external service")
 
     // ── Catch-all: log the real cause, hide details from the client ───────────
 

@@ -11,18 +11,28 @@ class ExchangeRateService(
 ) {
 
     fun getRate(from: String, to: String): Mono<RateResult> {
+        val base = from.uppercase()          // ← нормализуем регистр (урок с RUB/rub)
+        val target = to.uppercase()
         return webClient.get()
-            .uri("/latest/{base}", from)                 // GET .../v6/latest/USD
-            .retrieve()                                   // выполнить запрос
-            .bodyToMono(ErApiResponse::class.java)        // тело JSON -> Mono<ErApiResponse>
-            .timeout(Duration.ofSeconds(3))               // не ждать дольше 3 сек
-            .map { response ->                            // ErApiResponse -> RateResult
-                val rate = response.rates[to]
-                    ?: throw CurrencyNotFoundException(to)
-                RateResult(from = from, to = to, rate = rate)
+            .uri("/latest/{base}", base)
+            .retrieve()
+            .bodyToMono(ErApiResponse::class.java)
+            .timeout(Duration.ofSeconds(3))
+            .map { response ->
+                if (response.result != "success" || response.rates == null) {
+                    throw ExternalRateException("Внешний API вернул ошибку для '$base'")
+                }
+                val rate = response.rates[target]
+                    ?: throw CurrencyNotFoundException(target)
+                RateResult(from = base, to = target, rate = rate)
+            }
+            .onErrorMap(java.util.concurrent.TimeoutException::class.java) {
+                ExternalRateException("Сервис курсов не ответил вовремя")
             }
     }
 }
 
-class CurrencyNotFoundException(currency: String) :
-    RuntimeException("Курс для валюты '$currency' не найден")
+    class CurrencyNotFoundException(currency: String) :
+        RuntimeException("Курс для валюты '$currency' не найден")
+
+    class ExternalRateException(message: String) : RuntimeException(message)

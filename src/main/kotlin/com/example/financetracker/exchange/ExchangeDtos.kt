@@ -8,8 +8,8 @@ import java.math.BigDecimal
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class ErApiResponse(
     val result: String,
-    @JsonProperty("base_code") val baseCode: String,
-    val rates: Map<String, BigDecimal>
+    @JsonProperty("base_code") val baseCode: String? = null,
+    val rates: Map<String, BigDecimal>? = null
 )
 
 // 2. Наш аккуратный ответ клиенту
