@@ -82,8 +82,8 @@ data class CreateTransactionRequest(
     @field:NotNull(message = "Date cannot be null")
     val date: LocalDate,
 
-    @field:NotNull(message = "Type cannot be null")
-    val type: TransactionType,
+    @Deprecated("Use categoryId instead. Will be removed in v2.0")
+    val type: TransactionType? = null,
 
     @field:NotNull(message = "Category id cannot be null")
     val categoryId: Long

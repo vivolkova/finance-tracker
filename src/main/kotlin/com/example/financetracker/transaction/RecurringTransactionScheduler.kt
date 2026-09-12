@@ -5,7 +5,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.slf4j.LoggerFactory
+import com.example.financetracker.common.loggerFor
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Clock
@@ -17,7 +17,7 @@ class RecurringTransactionScheduler(
     private val processor: RecurringScheduleProcessor,
     private val clock: Clock
 ) {
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    private val logger = loggerFor<RecurringTransactionScheduler>()
 
     private companion object {
         const val WORKERS = 4

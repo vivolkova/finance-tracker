@@ -3,7 +3,7 @@ package com.example.financetracker.budget
 import com.example.financetracker.category.CategoryRepository
 import com.example.financetracker.user.User
 import org.hibernate.exception.ConstraintViolationException
-import org.slf4j.LoggerFactory
+import com.example.financetracker.common.loggerFor
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -21,7 +21,7 @@ class BudgetService(
     private val budgetRepository: BudgetRepository,
     private val categoryRepository: CategoryRepository
 ) {
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    private val logger = loggerFor<BudgetService>()
 
     @Transactional
     fun create(user: User, budgetCommand: BudgetCommand): BudgetDto {
@@ -58,5 +58,14 @@ class BudgetService(
                 constraint, user.id, budgetCommand.categoryId, budgetCommand.period, ex)
             throw ex
         }
+    }
+
+    @Transactional(readOnly = true)
+    fun get(userId: Long, period: String? = null): List<BudgetDto>{
+        return if (period != null)
+            budgetRepository.findByUserIdAndPeriodOrderByPeriodDesc(userId, period).map { it.toDto() }
+        else
+           budgetRepository.findByUserIdOrderByPeriodDesc(userId).map { it.toDto() }
+
     }
 }

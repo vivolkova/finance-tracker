@@ -10,6 +10,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class TransactionIntegrationTest : IntegrationTestBase() {
 
@@ -23,9 +24,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `get by id`() {
         val amount = BigDecimal(150)
-        val id = addTransaction(
-            "Groceries", CategoryType.EXPENSE, amount
-        )
+        val id = addTransactionWithCategory("Groceries", CategoryType.EXPENSE, amount)
 
         val result = restTemplate.exchange(
             "/api/transactions/{id}",
@@ -40,11 +39,11 @@ class TransactionIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `get all`() {
-        addTransaction(
+        addTransactionWithCategory(
             "Groceries", CategoryType.EXPENSE, BigDecimal(150)
         )
 
-        addTransaction(
+        addTransactionWithCategory(
             "Salary", CategoryType.INCOME, BigDecimal(150)
         )
 
@@ -113,7 +112,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `delete by id`() {
-        val id = addTransaction(
+        val id = addTransactionWithCategory(
             "Groceries", CategoryType.EXPENSE, BigDecimal(150)
         )
         val result = restTemplate.exchange(
@@ -136,15 +135,16 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         )
         assertEquals(HttpStatus.BAD_REQUEST, result.statusCode)
     }
+
     @Test
     fun `get summary`() {
         val incomeAmount = BigDecimal(200)
         val expenseAmount = BigDecimal(150)
-        addTransaction(
+        addTransactionWithCategory(
             "Groceries", CategoryType.EXPENSE, expenseAmount
         )
 
-        addTransaction(
+        addTransactionWithCategory(
             "Salary", CategoryType.INCOME, incomeAmount
         )
 
@@ -157,13 +157,13 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         )
         assertEquals(HttpStatus.OK, result.statusCode)
         assertEquals(0, result.body!!.totalIncome.compareTo(incomeAmount), "Wrong IncomeAmount")
-        assertEquals(0, result.body!!.totalExpense .compareTo(expenseAmount), "Wrong Expense Amount")
+        assertEquals(0, result.body!!.totalExpense.compareTo(expenseAmount), "Wrong Expense Amount")
         assertEquals(2, result.body!!.byCategory.size)
     }
 
     @Test
-    fun `update transaction`(){
-        val id = addTransaction(
+    fun `update transaction`() {
+        val id = addTransactionWithCategory(
             "Groceries", CategoryType.EXPENSE, BigDecimal(150)
         )
         val newAmount = BigDecimal(200)
@@ -187,8 +187,8 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `patch, version conflict`(){
-        val id = addTransaction(
+    fun `patch, version conflict`() {
+        val id = addTransactionWithCategory(
             "Groceries", CategoryType.EXPENSE, BigDecimal(150)
         )
         val transaction = restTemplate.exchange(
@@ -209,6 +209,77 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         assertEquals(HttpStatus.CONFLICT, result.statusCode)
     }
 
+    @Test
+    fun `limit exceeded`() {
+        val categoryId = addCategory("Groceries", CategoryType.EXPENSE).first.id
+        addBudget(categoryId, BigDecimal(1000), "2026-12")
+        addTransaction(categoryId, BigDecimal(500), date = LocalDate.of(2026, 12, 10))
+        addTransaction(categoryId, BigDecimal(200), date = LocalDate.of(2026, 12, 11))
+
+        val request = CreateTransactionRequest(
+            amount = BigDecimal(800),
+            date = LocalDate.of(2026, 12, 12),
+            categoryId = categoryId
+        )
+        val result = restTemplate.exchange(
+            "/api/transactions", HttpMethod.POST,
+            HttpEntity(request, headers), ProblemDetail::class.java
+        )
+
+        assertEquals(HttpStatus.UNPROCESSABLE_CONTENT, result.statusCode)
+        assertEquals("Limit Exceeded", result.body?.title)
+        assertTrue(result.body?.detail?.contains("Transaction limit by") == true)
+    }
+
+    @Test
+    fun `transaction within limit succeeds`() {
+        val categoryId = addCategory("Groceries", CategoryType.EXPENSE).first.id
+        addBudget(categoryId, BigDecimal(1000), "2026-12")
+        addTransaction(categoryId, BigDecimal(500), date = LocalDate.of(2026, 12, 10))
+
+        val request = CreateTransactionRequest(amount = BigDecimal(400), date = LocalDate.of(2026, 12, 12), categoryId = categoryId)
+        val result = restTemplate.exchange("/api/transactions", HttpMethod.POST,
+            HttpEntity(request, headers), TransactionDto::class.java)
+
+        assertEquals(HttpStatus.CREATED, result.statusCode)
+    }
+
+    @Test
+    fun `no budget means no limit check`() {
+        val categoryId = addCategory("Entertainment", CategoryType.EXPENSE).first.id
+
+        val request = CreateTransactionRequest(amount = BigDecimal(999999), date = LocalDate.now(), categoryId = categoryId)
+        val result = restTemplate.exchange("/api/transactions", HttpMethod.POST,
+            HttpEntity(request, headers), TransactionDto::class.java)
+
+        assertEquals(HttpStatus.CREATED, result.statusCode)
+    }
+
+    @Test
+    fun `spending exactly at limit succeeds`() {
+        val categoryId = addCategory("Groceries", CategoryType.EXPENSE).first.id
+        addBudget(categoryId, BigDecimal(1000), "2026-12")
+        addTransaction(categoryId, BigDecimal(600), date = LocalDate.of(2026, 12, 10))
+
+        val request = CreateTransactionRequest(amount = BigDecimal(400), date = LocalDate.of(2026, 12, 12), categoryId = categoryId) // 600+400=1000
+        val result = restTemplate.exchange("/api/transactions", HttpMethod.POST,
+            HttpEntity(request, headers), TransactionDto::class.java)
+
+        assertEquals(HttpStatus.CREATED, result.statusCode)
+    }
+
+    @Test
+    fun `transactions from other month do not count toward limit`() {
+        val categoryId = addCategory("Groceries", CategoryType.EXPENSE).first.id
+        addBudget(categoryId, BigDecimal(1000), "2026-12")
+        addTransaction(categoryId, BigDecimal(900), date = LocalDate.of(2026, 11, 30))  // ноябрь — не считается
+
+        val request = CreateTransactionRequest(amount = BigDecimal(900), date = LocalDate.of(2026, 12, 1), categoryId = categoryId)
+        val result = restTemplate.exchange("/api/transactions", HttpMethod.POST,
+            HttpEntity(request, headers), TransactionDto::class.java)
+
+        assertEquals(HttpStatus.CREATED, result.statusCode)   // если бы ноябрь считался — было бы превышение
+    }
 
 
     private fun TransactionDto.toUpdateTransactionRequest() = UpdateTransactionRequest(

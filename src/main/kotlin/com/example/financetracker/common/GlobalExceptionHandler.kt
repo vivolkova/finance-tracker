@@ -1,9 +1,11 @@
 package com.example.financetracker.common
 
+import CurrencyNotFoundException
+import ExternalRateException
 import com.example.financetracker.budget.DuplicateBudgetException
+import com.example.financetracker.transaction.LimitExceeded
 import jakarta.persistence.OptimisticLockException
 import jakarta.servlet.http.HttpServletRequest
-import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.http.ResponseEntity
@@ -32,7 +34,7 @@ class GlobalExceptionHandler {
     // конвенции, а не экономия. Реальную выгоду даёт для часто создаваемых классов
     // (сущности, DTO), где иначе плодились бы ссылки на логгер в каждом экземпляре.
     companion object {
-        private val logger = LoggerFactory.getLogger(GlobalExceptionHandler::class.java)
+        private val logger = loggerFor<GlobalExceptionHandler>()
     }
 
     // ── Technique 1: build and return a ProblemDetail directly ────────────────
@@ -113,6 +115,22 @@ class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException::class)
     fun handleUnreadable(ex: HttpMessageNotReadableException): ProblemDetail =
         problem(HttpStatus.BAD_REQUEST, "Bad Request", "Malformed or missing request body")
+
+    @ExceptionHandler(LimitExceeded::class)
+    fun handlerLimitExceeded(ex: LimitExceeded): ProblemDetail =
+        problem(HttpStatus.UNPROCESSABLE_CONTENT, "Limit Exceeded", ex.message ?: "Transaction Limit Exceeded")
+
+    @ExceptionHandler(CurrencyNotFoundException::class)
+    fun handlerCurrencyNotFoundException(ex: CurrencyNotFoundException): ProblemDetail {
+        logger.warn("CurrencyNotFoundException: {}", ex.message, ex)
+        return problem(HttpStatus.NOT_FOUND, "Exchange rate", ex.message ?: "Exchange rate not found")
+    }
+
+    @ExceptionHandler(ExternalRateException::class)
+    fun handlerExternalRateException(ex: ExternalRateException): ProblemDetail {
+        logger.warn("ExternalRateException: {}", ex.message, ex)
+        return problem(HttpStatus.BAD_GATEWAY, "External service", ex.message ?: "No answer from external service")
+    }
 
     // ── Catch-all: log the real cause, hide details from the client ───────────
 

@@ -1,16 +1,19 @@
 package com.example.financetracker.transaction
 
+import com.example.financetracker.budget.BudgetRepository
+import com.example.financetracker.category.Category
 import com.example.financetracker.category.CategoryRepository
 import com.example.financetracker.category.CategoryType
 import com.example.financetracker.user.User
 import jakarta.persistence.OptimisticLockException
-import org.slf4j.LoggerFactory
+import com.example.financetracker.common.loggerFor
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.YearMonth
 
 data class CreateTransactionCommand(
     val amount: BigDecimal,
@@ -30,9 +33,10 @@ data class UpdateTransactionCommand(
 @Service
 class TransactionService(
     private val transactionRepository: TransactionRepository,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val budgetRepository: BudgetRepository,
 ) {
-    private val logger = LoggerFactory.getLogger(TransactionService::class.java)
+    private val logger = loggerFor<TransactionService>()
 
     @Transactional(readOnly = true)
     fun getAll(): List<TransactionDto> =
@@ -49,6 +53,8 @@ class TransactionService(
     fun create(user: User, command: CreateTransactionCommand): TransactionDto {
         val category = categoryRepository.findById(command.categoryId)
             .orElseThrow { NoSuchElementException("Category not found with id: ${command.categoryId}") }
+
+        checkAvailableLimits(command, user, category)
 
         return transactionRepository.save(
             Transaction(
@@ -141,5 +147,26 @@ class TransactionService(
         // saveAndFlush forces the SQL UPDATE immediately so Hibernate can write
         // back the incremented version to the entity before toDto() is called.
         return transactionRepository.saveAndFlush(updated).toDto()
+    }
+
+    private fun checkAvailableLimits(
+        command: CreateTransactionCommand,
+        user: User,
+        category: Category
+    ) {
+        val period = YearMonth.from(command.date)
+
+        val budget =
+            budgetRepository.findForUpdate(
+                user.id,
+                period.toString(),
+                category.id
+            ) ?: return
+
+        val totalAmount =
+            transactionRepository.getTotalAmount(period.atDay(1), period.atEndOfMonth(), user.id, category.id)
+        if (totalAmount + command.amount > budget.limitAmount) {
+            throw LimitExceeded("Transaction limit by ${category.name} exceeded")
+        }
     }
 }
