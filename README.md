@@ -11,6 +11,7 @@ A pet project for learning backend development.
 - 📊 **Monthly summary** — totals, balance, and per-category breakdown
 - ⚡ **Redis caching** — monthly summary cached with a TTL and evicted on writes
 - 🔁 **Recurring transactions** — schedules that auto-create transactions on a cron job
+- 💱 **Currency exchange rates** — live rates from an external API, served both reactively (WebFlux/WebClient) and blocking (RestClient)
 - 📈 **Metrics & monitoring** — Micrometer/Prometheus metrics scraped into Prometheus and visualized in Grafana
 - 📖 **OpenAPI / Swagger UI** — interactive API docs
 
@@ -19,6 +20,7 @@ A pet project for learning backend development.
 - **Kotlin** + **Spring Boot 4**
 - **PostgreSQL** — database
 - **Redis** — cache backend (Spring Cache abstraction + Lettuce)
+- **Spring WebFlux** — reactive `WebClient` (`Mono`) for the external exchange-rate API, alongside a blocking `RestClient`
 - **Spring Data JPA** + **Hibernate** — data access
 - **Flyway** — database migrations
 - **Spring Security** + **JWT (jjwt)** — authentication
@@ -55,7 +57,8 @@ Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 ## Authentication
 
 The API uses stateless JWT authentication. All endpoints require a valid token
-**except** `/api/auth/**` and the Swagger/OpenAPI docs, which are public.
+**except** `/api/auth/**`, `/api/users/**`, `/api/rates/**`, the Actuator endpoints,
+and the Swagger/OpenAPI docs, which are public.
 
 1. Register or log in to receive an `accessToken` and a `refreshToken`.
 2. Send the access token on every protected request:
@@ -107,6 +110,18 @@ Authorization: Bearer <accessToken>
 A background job (`RecurringTransactionScheduler`) runs every minute, creates due
 transactions from active schedules, and deactivates schedules past their end date.
 Supported frequencies: `DAILY`, `WEEKLY`, `MONTHLY`, `YEARLY`.
+
+### Exchange Rates
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/rates?from={from}&to={to}` | Get an exchange rate reactively (WebFlux/`WebClient`, returns `Mono`) |
+| GET | `/api/rates/blocking?from={from}&to={to}` | Get the same rate via a blocking `RestClient` |
+
+Rates are fetched from the external [open.er-api.com](https://open.er-api.com) API
+(`ExchangeRateService` uses a reactive `WebClient` with a 3-second timeout;
+`ExchangeRateRestClientService` uses a blocking `RestClient`). Currency codes are
+case-insensitive. An unknown currency returns a "not found" error, and upstream
+failures/timeouts surface as an external-service error. These endpoints are public.
 
 ## Caching
 
