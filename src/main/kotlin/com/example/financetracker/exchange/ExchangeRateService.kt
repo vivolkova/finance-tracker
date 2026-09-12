@@ -31,6 +31,22 @@ class ExchangeRateService(
             .onErrorMap(java.util.concurrent.TimeoutException::class.java) {
                 ExternalRateException("Сервис курсов не ответил вовремя")
             }
+
+    }
+
+    data class RatesBundle(val usd: RateResult, val eur: RateResult, val gbp: RateResult)
+
+    fun getBundle(base: String): Mono<RatesBundle> {
+        val usd = getRate(base, "USD")   // Mono<RateResult> — ещё НЕ запущен
+        val eur = getRate(base, "EUR")   // Mono<RateResult>
+        val gbp = getRate(base, "GBP")   // Mono<RateResult>
+
+        return Mono.zip(usd, eur, gbp)               // подписывается на все ТРИ разом
+            .map { tuple ->                          // tuple: Tuple3<RateResult, RateResult, RateResult>
+                RatesBundle(tuple.t1, tuple.t2, tuple.t3)
+            }
     }
 }
+
+
 
